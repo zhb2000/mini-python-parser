@@ -1,4 +1,11 @@
-import { enumerate, filter, map, list, range, sum } from '../src/utils/pylike';
+import {
+    enumerate,
+    filter,
+    map,
+    list,
+    range,
+    sum
+} from '../../src/utils/pylike';
 
 test('enumerate test 1', () => {
     const arr = [0, 1, 2, 3, 4, 5];

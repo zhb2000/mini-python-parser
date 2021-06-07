@@ -1,3 +1,15 @@
-import { hello } from './hello';
+import { makeCharSequences } from './scanner/preprocessor';
+import {printCharSequences} from './debugio/printer'
+
 console.log('I am in main');
-console.log(hello('str'));
+const text = `
+if True:
+    aaaa
+    bbbb
+    if True
+        cccc
+        dddd
+    while True
+        aaaa`;
+
+console.log(printCharSequences(makeCharSequences(text)));
