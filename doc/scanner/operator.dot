@@ -1,0 +1,31 @@
+digraph G {
+    rankdir = LR
+    node[shape=circle]
+    0[label="",color=transparent, width=0]
+    0->1
+    //arithmetic
+    2,3,4,5,6,7,20[shape=doublecircle]
+    1->2[label="+"]
+    1->3[label="-"]
+    1->4[label="*"]
+    1->5[label="/"]
+    1->20[label="%"]
+    4->6[label="*"]
+    5->7[label="/"]
+    //compare
+    8,9,10,11,13[shape=doublecircle]
+    1->8[label="<"]
+    1->9[label=">"]
+    1->10[label="="]
+    8->11[label="="]
+    9->12[label="="]
+    10->13[label="="]
+    //bitwise
+    14,15,16,17,18,19[shape=doublecircle]
+    8->14[label="<"]
+    9->15[label=">"]
+    1->16[label="&"]
+    1->17[label="|"]
+    1->18[label="~"]
+    1->19[label="^"]
+}

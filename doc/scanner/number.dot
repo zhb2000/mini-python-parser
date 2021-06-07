@@ -1,0 +1,14 @@
+digraph G {
+    rankdir=LR
+    node[shape="circle"]
+    // edge[fontname="courier new"]
+    0[label="",color=transparent,width=0]
+    2[shape=doublecircle]
+    4[shape=doublecircle]
+    0->1
+    1->2[label="digit"]
+    2->2[label="digit"]
+    2->3[label="."]
+    3->4[label="digit"]
+    4->4[label="digit"]
+}

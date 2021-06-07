@@ -1,0 +1,10 @@
+digraph G {
+    // rankdir=LR
+    node[shape="circle"]
+    // edge[fontname="courier new"]
+    0[label="",color=transparent,width=0]
+    2[shape=doublecircle]
+    0->1
+    1->2[label="letter, _"]
+    2->2[label="letter, digit, _"]
+}
