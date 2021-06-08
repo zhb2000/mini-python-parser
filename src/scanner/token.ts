@@ -8,6 +8,15 @@ interface IToken {
     position: Position;
 }
 
+class CommentToken implements IToken {
+    content: string;
+    position: Position;
+    constructor(content: string, position: Position) {
+        this.content = content;
+        this.position = position;
+    }
+}
+
 class NumberToken implements IToken {
     value: number;
     position: Position;
@@ -82,4 +91,4 @@ enum Sym {
     Mod = '%'
 }
 
-export { Position };
+export { Position, IToken };
