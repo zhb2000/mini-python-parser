@@ -28,7 +28,7 @@ digraph G {
     s3->s2[label="[^NewLine]"]
     s2->s4[label="'"]
     1 ->s5[label="\""]
-    s5->s5[label="[^'\\NewLine]"]
+    s5->s5[label="[^\"\\NewLine]"]
     s5->s6[label="\\"]
     s6->s5[label="[^NewLine]"]
     s5->s4[label="\""]
