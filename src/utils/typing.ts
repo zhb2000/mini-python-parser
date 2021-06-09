@@ -1,7 +1,7 @@
 type Optional<T> = T | undefined;
 
 function throwErr<E extends Error>(
-    ErrorType: new (...args: any) => E, ...args: any): never {
+    ErrorType: new (...args: any[]) => E, ...args: any[]): never {
     throw new ErrorType(...args);
 }
 

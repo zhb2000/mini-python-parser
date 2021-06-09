@@ -1,3 +1,6 @@
+import { throwErr } from './typing';
+import * as itertools from './pylike-itertools';
+
 function list(): [];
 function list<T>(iterable: Iterable<T>): T[];
 function list<T>(iterable?: Iterable<T>): T[] {
@@ -34,13 +37,13 @@ function range(start: number, stop: number): Iterable<number>;
 function range(start: number, stop: number, step: number): Iterable<number>;
 function* range(a: number, b?: number, c?: number): Iterable<number> {
     let start, stop, step;
-    if (b == null && c == null) {
+    if (b == null && c == null) { //range(stop)
         start = 0;
         stop = a;
         step = 1;
-    } else {
+    } else { //range(start, stop[, step])
         start = a;
-        stop = b ?? start;
+        stop = b ?? throwErr(Error, 'stop should be non null');
         step = c ?? 1;
     }
     if (step >= 0) {
@@ -67,4 +70,12 @@ function sum(iterable: Iterable<number>, start?: number): number {
     return ans;
 }
 
-export { list, map, filter, enumerate, range, sum };
+export {
+    list,
+    map,
+    filter,
+    enumerate,
+    range,
+    sum,
+    itertools
+};

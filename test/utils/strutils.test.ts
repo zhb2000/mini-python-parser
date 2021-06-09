@@ -1,4 +1,20 @@
-import { isString, isdigit, isalpha } from '../../src/utils/strutils';
+import { isEmpty, isString, isdigit, isalpha } from '../../src/utils/strutils';
+
+test('isEmpty test 1', () => {
+    expect(isEmpty(null)).toEqual(true);
+});
+
+test('isEmpty test 1', () => {
+    expect(isEmpty(undefined)).toEqual(true);
+});
+
+test('isEmpty test 1', () => {
+    expect(isEmpty('')).toEqual(true);
+});
+
+test('isEmpty test 1', () => {
+    expect(isEmpty('   ')).toEqual(false);
+});
 
 test('isString test 1', () => {
     expect(isString('')).toEqual(true);

@@ -1,8 +1,29 @@
-import { range } from '../utils/pylike';
-import { isdigit, isalpha, isString } from '../utils/strutils';
+import { itertools, map, range } from '../utils/pylike';
+import { isdigit, isalpha } from '../utils/strutils';
 import { asNonNull, Optional, throwErr } from '../utils/typing';
-import { IndentInc, IndentDec, NewLine, PyChar } from './preprocessor';
-import { Position, IToken } from './token';
+import {
+    IndentInc,
+    IndentDec,
+    NewLine,
+    PyChar,
+    SourceCode
+} from './preprocessor';
+import {
+    Position,
+    IToken,
+    makeCommentToken,
+    makeSymbolToken,
+    IndentIncToken,
+    IndentDecToken,
+    NewLineToken,
+    FloatToken,
+    IntToken,
+    isPythonKeyword,
+    makeKeywordToken,
+    IdentifierToken,
+    makeStringToken,
+    CommentToken
+} from './token';
 
 class PyCharMap<V> {
     private strMap: Map<string, V> = new Map();
@@ -44,7 +65,7 @@ class PyCharMap<V> {
         } else if (key instanceof NewLine) {
             this.newlineValue = value;
         } else {
-            this.strMap.get(key);
+            this.strMap.set(key, value);
         }
         return this;
     }
@@ -74,21 +95,6 @@ interface INode {
 class Automaton {
     private nodes = new Map<string, INode>();
     private cursor: INode;
-    private buffer: PyChar[] = [];
-    private tokenFactories = new Map<string, (s: string) => IToken>();
-
-    private addNode(name: string, acceptable: boolean,
-        char2NodeName: PyCharMap<string>) {
-        const that = this;
-        const node = {
-            name, acceptable, char2NodeName,
-            to(ch: PyChar) {
-                const key = this.char2NodeName.get(ch);
-                return (key != null) ? that.nodes.get(key) : undefined;
-            }
-        };
-        this.nodes.set(name, node);
-    }
 
     canConsume(ch: PyChar): boolean {
         return this.cursor.to(ch) != null;
@@ -96,7 +102,6 @@ class Automaton {
 
     consume(ch: PyChar) {
         this.cursor = asNonNull(this.cursor.to(ch));
-        this.buffer.push(ch);
     }
 
     /** 当前状态 */
@@ -104,29 +109,13 @@ class Automaton {
         return this.cursor;
     }
 
-    /** 清除 buffer 并让 cursor 返回初始状态 */
-    clear() {
+    /** 让 cursor 返回初始状态 */
+    reset() {
         this.cursor = asNonNull(this.nodes.get('1'));
-        this.buffer.length = 0;
-    }
-
-    /** 获取 Token，不修改 buffer 和 cursor */
-    getToken(): IToken {
-        const factory = this.tokenFactories.get(this.cursor.name)
-            ?? throwErr(Error, 'Current node without a token factory');
-        return factory(this.buffer.join());
-    }
-
-    /** 获取 Token 并清空 buffer、cursor 回初态 */
-    retrieveToken(): IToken {
-        const token = this.getToken();
-        this.clear();
-        return token;
     }
 
     constructor() {
         this.initNodes();
-        this.initTokenFactories();
         this.cursor = asNonNull(this.nodes.get('1'));
     }
 
@@ -149,7 +138,7 @@ class Automaton {
                     ['^', 'o19'], ['(', 'd5'], [')', 'd6'],
                     ['[', 'd7'], [']', 'd8'], ['{', 'd9'],
                     [']', 'd10'], [',', 'd11'], ['.', 'd12'],
-                    [':', 'd13']
+                    [':', 'd13'], [' ', '1'], ['\t', '1']
                 ]))
         );
         //c2
@@ -254,25 +243,138 @@ class Automaton {
             new PyCharMap<string>()
                 .set('>', 'o15').set('=', 'o12')
         );
-        //o15
-        this.addNode('o15', true, new PyCharMap());
-        //o12
-        this.addNode('o12', true, new PyCharMap());
         //o10
         this.addNode('o10', true, new PyCharMap<string>().set('=', 'o13'));
-        //o13
-        this.addNode('o13', true, new PyCharMap());
-        //o16-o19, d2-d13
-        const names = ['o16', 'o17', 'o18', 'o19'];
-        for (const i of range(2, 13 + 1)) {//d2-d13
-            names.push(`d${i}`);
+        //o11-o19, d2-d13
+        for (const name of itertools.chain(
+            map(i => 'o' + i, range(11, 19 + 1)),
+            map(i => 'd' + i, range(2, 13 + 1)))) {
+            this.addNode(name, true, new PyCharMap());
         }
-        names.forEach(name => this.addNode(name, true, new PyCharMap()));
     }
 
-    private initTokenFactories() {
-
+    private addNode(name: string, acceptable: boolean,
+        char2NodeName: PyCharMap<string>) {
+        const that = this;
+        const node = {
+            name, acceptable, char2NodeName,
+            to(ch: PyChar) {
+                const key = this.char2NodeName.get(ch);
+                return (key != null) ? that.nodes.get(key) : undefined;
+            }
+        };
+        this.nodes.set(name, node);
     }
 }
 
-export { Position };
+class Scanner {
+    private dfa: Automaton = new Automaton();
+    private charBuffer: PyChar[] = [];
+    private posBuffer: Position[] = [];
+    private tokenFactories = new Map<string, (s: string, pos: Position) => IToken>();
+
+    constructor() {
+        this.initTokenFactories();
+    }
+
+    scan(text: string): IToken[] {
+        const tokens: IToken[] = [];
+        const sourceCode = new SourceCode(text);
+        const posAndChar = [...sourceCode.iterCharsWithPos()];
+        let i = 0;
+        while (i < posAndChar.length) {
+            const [pos, ch] = posAndChar[i];
+            if (this.canConsume(ch)) {
+                this.consume(ch, pos);
+                i++;
+            } else {
+                if (this.dfa.current().acceptable) {
+                    const token = this.retrieveToken();
+                    if (!(token instanceof CommentToken)) {
+                        tokens.push(token);
+                    }
+                } else {
+                    throw new Error(`Cannot consume char ${ch}, position: ${pos}`);
+                }
+            }
+        }
+        //最后一个字符
+        if (this.dfa.current().acceptable) {
+            const token = this.retrieveToken();
+            if (!(token instanceof CommentToken)) {
+                tokens.push(token);
+            }
+        } else {
+            throw new Error('No such token');
+        }
+        return tokens;
+    }
+
+    private canConsume(ch: PyChar): boolean {
+        return this.dfa.canConsume(ch);
+    }
+
+    private consume(ch: PyChar, pos: Position) {
+        this.dfa.consume(ch);
+        if (this.dfa.current().name !== '1') {
+            this.charBuffer.push(ch);
+            this.posBuffer.push(pos);
+        }
+    }
+
+    /** 清除 buffer 并让 cursor 返回初始状态 */
+    private clear() {
+        this.dfa.reset();
+        this.charBuffer.length = 0;
+        this.posBuffer.length = 0;
+    }
+
+    /** 获取 Token，不修改 buffer 和 DFA */
+    private getToken(): IToken {
+        const factory = this.tokenFactories.get(this.dfa.current().name)
+            ?? throwErr(Error, 'Current node without a token factory');
+        const tokenStr = this.charBuffer.join('');
+        const tokenPos: Position = {
+            line: this.posBuffer[0].line,
+            start: this.posBuffer[0].start,
+            stop: this.posBuffer[this.posBuffer.length - 1].stop
+        };
+        return factory(tokenStr, tokenPos);
+    }
+
+    /** 获取 Token 并清空 buffer、DFA 回初态 */
+    private retrieveToken(): IToken {
+        const token = this.getToken();
+        this.clear();
+        return token;
+    }
+
+    private initTokenFactories() {
+        //Comment Token: c3
+        this.tokenFactories.set('c3', makeCommentToken);
+        //identifier or keyword: id2
+        this.tokenFactories.set('id2',
+            (s, pos) => isPythonKeyword(s)
+                ? makeKeywordToken(s, pos)
+                : new IdentifierToken(s, pos)
+        );
+        //int: n2
+        this.tokenFactories.set('n2', (s, pos) => new IntToken(BigInt(s), pos));
+        //float: n4
+        this.tokenFactories.set('n4', (s, pos) => new FloatToken(Number.parseFloat(s), pos));
+        //str: s4
+        this.tokenFactories.set('s4', (s, pos) => makeStringToken(s, pos));
+        //Symbol Token: o2-o20, o5-o13
+        for (const name of itertools.chain(
+            map(i => 'o' + i, range(2, 20 + 1)),
+            map(i => 'd' + i, range(5, 13 + 1)))) {
+            this.tokenFactories.set(name, makeSymbolToken);
+        }
+        //Special Symbol Token: d2, d3, d4
+        this.tokenFactories.set('d2', (_, pos) => new IndentIncToken(pos));
+        this.tokenFactories.set('d3', (_, pos) => new IndentDecToken(pos));
+        this.tokenFactories.set('d4', (_, pos) => new NewLineToken(pos));
+    }
+}
+
+export { Position, Scanner };

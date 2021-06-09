@@ -85,17 +85,20 @@ function splitLine(line: string, lineNumber: number): [CharSequence[], CharSeque
 }
 
 function makeCharSequences(text: string): CharSequence[] {
-    text = text.replace('\r\n', '\n');
+    text = text.replace('\r\n', '\n').replace('\r', '\n');
     const lines = text.split('\n');
     const sequences: CharSequence[] = [];
     let lastIndentNum = 0; //上一行缩进数目
     for (const [lineNumber, line] of enumerate(lines)) {
-        if (strutils.isBlank(line)) {
+        if (strutils.isBlank(line)) { //忽略空行
+            continue;
+        }
+        if (/^#.*$/.test(line.trim())) { //忽略全注释行
             continue;
         }
         const [indents, codes] = splitLine(line, lineNumber);
         const indentNum = indents.length;
-        if (indentNum == lastIndentNum) {
+        if (indentNum === lastIndentNum) {
             //缩进不变
             sequences.push(...codes);
         } else if (indentNum < lastIndentNum) {
@@ -137,27 +140,22 @@ class SourceCode {
         this.sequences = makeCharSequences(text);
     }
 
-    *iterCharsWithPos(): Iterable<[PyChar, Position]> {
+    *iterCharsWithPos(): Iterable<[Position, PyChar]> {
         for (const seq of this.sequences) {
             if (strutils.isString(seq.data)) {
                 for (const [i, ch] of enumerate(seq.data as string, seq.start)) {
-                    yield [ch, { line: seq.line, start: i, stop: i + 1 }];
+                    yield [{ line: seq.line, start: i, stop: i + 1 }, ch];
                 }
             } else {
                 yield [
-                    seq.data,
-                    {
-                        line: seq.line,
-                        start: seq.start,
-                        stop: seq.stop
-                    }
+                    { line: seq.line, start: seq.start, stop: seq.stop }, seq.data
                 ];
             }
         }
     }
 
     *iterChars(): Iterable<PyChar> {
-        for (const [ch, _] of this.iterCharsWithPos()) {
+        for (const [_, ch] of this.iterCharsWithPos()) {
             yield ch;
         }
     }
