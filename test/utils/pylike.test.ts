@@ -34,6 +34,7 @@ test('map test 1', () => {
     expect(r1).toEqual(r2);
 });
 
+//#region list
 test('list test 1', () => {
     expect(list()).toEqual([]);
 });
@@ -46,7 +47,9 @@ test('list test 2', () => {
     }());
     expect(arr).toEqual([0, 1, 2, 3, 4]);
 });
+//#endregion
 
+//#region range
 test('range test 1', () => {
     const result1 = [...range(1, 10, 2)];
     const result2 = [1, 3, 5, 7, 9];
@@ -58,7 +61,9 @@ test('range test 1', () => {
     const result2 = [5, 4, 3, 2, 1];
     expect(result1).toEqual(result2);
 });
+//#endregion
 
+//#region sum
 test('sum test 1', () => {
     const r = sum([0, 1, 2, 3]);
     expect(r).toEqual(6);
@@ -68,8 +73,9 @@ test('sum test 2', () => {
     const r = sum([0, 1, 2, 3], 2);
     expect(r).toEqual(5);
 });
+//#endregion
 
-
+//#region chain
 test('chain test 1', () => {
     const arr = [...itertools.chain([1, 2, 3], [4, 5, 6])];
     expect(arr).toEqual([1, 2, 3, 4, 5, 6]);
@@ -79,3 +85,4 @@ test('chain test 2', () => {
     const arr = [...itertools.chain([1, 2, 3])];
     expect(arr).toEqual([1, 2, 3]);
 });
+//#endregion

@@ -1,4 +1,4 @@
-import { PySyntaxError } from '../../src/scanner/error';
+import { PySyntaxError } from '../../src/scanner/errors';
 import { Scanner } from '../../src/scanner/scanner';
 import { cases } from './scannerTestCases';
 

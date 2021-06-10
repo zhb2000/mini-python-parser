@@ -2,8 +2,11 @@ import { throwErr } from "../utils/typing";
 import { IndentDec, IndentInc, NewLine, PyChar } from "./preprocessor";
 
 class Position {
+    /** 行号 */
     line: number;
+    /** 开始列号 */
     start: number;
+    /** 结束列号 */
     stop: number;
     constructor(line: number, start: number, stop: number) {
         this.line = line;
@@ -55,8 +58,12 @@ class StringToken extends TokenBase {
     }
     getString(): string {
         return this.value.substr(1, this.value.length - 2)
-            .replace('\\n', '\n').replace('\\r', '\r')
-            .replace('\\t', '\t').replace('\\\\', '\\');
+            .replace(String.raw`\n`, '\n')
+            .replace(String.raw`\r`, '\r')
+            .replace(String.raw`\t`, '\t')
+            .replace(String.raw`\'`, "'")
+            .replace(String.raw`\"`, '"')
+            .replace(String.raw`\\`, '\\');
     }
 }
 

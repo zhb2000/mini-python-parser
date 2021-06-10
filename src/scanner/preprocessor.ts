@@ -1,39 +1,24 @@
 import * as strutils from '../utils/strutils';
 import { enumerate, range } from '../utils/pylike';
 import { Position } from './scanner';
-import { PySyntaxError } from './error';
+import { PySyntaxError } from './errors';
 
-class NewLine {
-    toString(): string {
-        return 'NewLine';
-    }
-}
-
-class IndentInc {
-    toString(): string {
-        return 'IndentInc';
-    }
-}
-
-class IndentDec {
-    toString(): string {
-        return 'IndentDec';
-    }
-}
+/** 换行，相当于其他语言里的分号 */
+class NewLine { toString() { return 'NewLine'; } }
+/** 缩进增，相当于其他语言里的左花括号 */
+class IndentInc { toString() { return 'IndentInc'; } }
+/** 缩进减，相当于其他语言里的左花括号 */
+class IndentDec { toString() { return 'IndentDec'; } }
 
 type PyChar = string | NewLine | IndentInc | IndentDec;
 
 class CharSequence {
     data: string | NewLine | IndentInc | IndentDec;
-    line: number;
-    start: number;
-    stop: number;
+    position: Position;
     constructor(data: string | NewLine | IndentInc | IndentDec,
-        line: number, start: number, stop: number) {
+        position: Position) {
         this.data = data;
-        this.line = line;
-        this.start = start;
-        this.stop = stop;
+        this.position = position;
     }
 }
 
@@ -52,18 +37,17 @@ function splitLine(line: string, lineNumber: number): [CharSequence[], CharSeque
             if (spaceCnt === 4) {
                 indents.push({
                     data: new IndentInc(),
-                    line: lineNumber, start: i - 3, stop: i + 1
+                    position: { line: lineNumber, start: i - 3, stop: i + 1 }
                 });
                 spaceCnt = 0;
             }
         } else if (line[i] === '\t') {
             if (spaceCnt != 0) {
-                //TODO
-                throw new PySyntaxError('Indent error');
+                throw new PySyntaxError(`Indent error at line ${i}.`);
             }
             indents.push({
                 data: new IndentInc(),
-                line: lineNumber, start: i, stop: i + 1
+                position: { line: lineNumber, start: i, stop: i + 1 }
             });
         }
         i++;
@@ -72,14 +56,19 @@ function splitLine(line: string, lineNumber: number): [CharSequence[], CharSeque
     const codes: CharSequence[] = [
         {   //实际代码
             data: codeStr,
-            line: lineNumber,
-            start: i, stop: i + codeStr.length
+            position: {
+                line: lineNumber,
+                start: i,
+                stop: i + codeStr.length
+            }
         },
         {   //换行
             data: new NewLine(),
-            line: lineNumber,
-            start: i + codeStr.length,
-            stop: i + codeStr.length
+            position: {
+                line: lineNumber,
+                start: i + codeStr.length,
+                stop: i + codeStr.length
+            }
         }
     ];
     return [indents, codes];
@@ -107,7 +96,7 @@ function makeCharSequences(text: string): CharSequence[] {
             for (const _ of range(lastIndentNum - indentNum)) {
                 sequences.push({
                     data: new IndentDec(),
-                    line: lineNumber, start: 0, stop: 0
+                    position: { line: lineNumber, start: 0, stop: 0 }
                 });
             }
             sequences.push(...codes);
@@ -127,7 +116,7 @@ function makeCharSequences(text: string): CharSequence[] {
         for (const _ of range(lastIndentNum)) {
             sequences.push({
                 data: new IndentDec(),
-                line: lines.length + 1, start: 0, stop: 0
+                position: { line: lines.length + 1, start: 0, stop: 0 }
             });
         }
     }
@@ -135,7 +124,7 @@ function makeCharSequences(text: string): CharSequence[] {
 }
 
 class SourceCode {
-    sequences: CharSequence[];
+    private sequences: CharSequence[];
 
     constructor(text: string) {
         this.sequences = makeCharSequences(text);
@@ -144,13 +133,11 @@ class SourceCode {
     *iterCharsWithPos(): Iterable<[Position, PyChar]> {
         for (const seq of this.sequences) {
             if (strutils.isString(seq.data)) {
-                for (const [i, ch] of enumerate(seq.data as string, seq.start)) {
-                    yield [{ line: seq.line, start: i, stop: i + 1 }, ch];
+                for (const [i, ch] of enumerate(seq.data as string, seq.position.start)) {
+                    yield [{ line: seq.position.line, start: i, stop: i + 1 }, ch];
                 }
             } else {
-                yield [
-                    { line: seq.line, start: seq.start, stop: seq.stop }, seq.data
-                ];
+                yield [seq.position, seq.data];
             }
         }
     }

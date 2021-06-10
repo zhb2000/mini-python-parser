@@ -1,21 +1,24 @@
 import { isEmpty, isString, isdigit, isalpha } from '../../src/utils/strutils';
 
+//#region isEmpty
 test('isEmpty test 1', () => {
     expect(isEmpty(null)).toEqual(true);
 });
 
-test('isEmpty test 1', () => {
+test('isEmpty test 2', () => {
     expect(isEmpty(undefined)).toEqual(true);
 });
 
-test('isEmpty test 1', () => {
+test('isEmpty test 3', () => {
     expect(isEmpty('')).toEqual(true);
 });
 
-test('isEmpty test 1', () => {
+test('isEmpty test 4', () => {
     expect(isEmpty('   ')).toEqual(false);
 });
+//#endregion
 
+//#region isString
 test('isString test 1', () => {
     expect(isString('')).toEqual(true);
 });
@@ -43,7 +46,9 @@ test('isString test 6', () => {
 test('isString test 7', () => {
     expect(isString([])).toEqual(false);
 });
+//#endregion
 
+//#region isdigit
 test('isdigit test 1', () => {
     expect(isdigit('0')).toEqual(true);
 });
@@ -59,7 +64,9 @@ test('isdigit test 3', () => {
 test('isdigit test 4', () => {
     expect(isdigit('a')).toEqual(false);
 });
+//#endregion
 
+//#region isalpha
 test('isalpha test 1', () => {
     expect(isalpha('a')).toEqual(true);
 });
@@ -79,3 +86,4 @@ test('isalpha test 4', () => {
 test('isalpha test 5', () => {
     expect(isalpha('0')).toEqual(false);
 });
+//#endregion

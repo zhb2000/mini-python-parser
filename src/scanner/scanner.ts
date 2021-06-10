@@ -1,7 +1,7 @@
 import { itertools, map, range } from '../utils/pylike';
 import { isdigit, isalpha } from '../utils/strutils';
 import { asNonNull, Optional, throwErr } from '../utils/typing';
-import { PySyntaxError } from './error';
+import { PySyntaxError } from './errors';
 import {
     IndentInc,
     IndentDec,
