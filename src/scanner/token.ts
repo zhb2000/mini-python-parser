@@ -215,9 +215,9 @@ abstract class SpecialPunctuatorToken implements IToken {
     toString() { return `{ type: ${this.type}, value: ${this.value} }`; }
     repr() { return { 'type': this.type, 'value': this.value }; }
 }
-class IndentIncToken extends SpecialPunctuatorToken { charType() { return IndentInc; } }
-class IndentDecToken extends SpecialPunctuatorToken { charType() { return IndentDec; } }
-class NewLineToken extends SpecialPunctuatorToken { charType() { return NewLine; } }
+class IndentIncToken extends SpecialPunctuatorToken { }
+class IndentDecToken extends SpecialPunctuatorToken { }
+class NewLineToken extends SpecialPunctuatorToken { }
 //#endregion
 
 export {
