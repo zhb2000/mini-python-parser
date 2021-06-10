@@ -4,7 +4,8 @@ import {
     map,
     list,
     range,
-    sum
+    sum,
+    itertools
 } from '../../src/utils/pylike';
 
 test('enumerate test 1', () => {
@@ -66,4 +67,15 @@ test('sum test 1', () => {
 test('sum test 2', () => {
     const r = sum([0, 1, 2, 3], 2);
     expect(r).toEqual(5);
+});
+
+
+test('chain test 1', () => {
+    const arr = [...itertools.chain([1, 2, 3], [4, 5, 6])];
+    expect(arr).toEqual([1, 2, 3, 4, 5, 6]);
+});
+
+test('chain test 2', () => {
+    const arr = [...itertools.chain([1, 2, 3])];
+    expect(arr).toEqual([1, 2, 3]);
 });

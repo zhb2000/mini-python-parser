@@ -1,6 +1,7 @@
 import { itertools, map, range } from '../utils/pylike';
 import { isdigit, isalpha } from '../utils/strutils';
 import { asNonNull, Optional, throwErr } from '../utils/typing';
+import { PySyntaxError } from './error';
 import {
     IndentInc,
     IndentDec,
@@ -11,18 +12,17 @@ import {
 import {
     Position,
     IToken,
-    makeCommentToken,
-    makeSymbolToken,
+    CommentToken,
+    IntToken,
+    FloatToken,
+    IdentifierToken,
+    StringToken,
     IndentIncToken,
     IndentDecToken,
     NewLineToken,
-    FloatToken,
-    IntToken,
-    isPythonKeyword,
+    isPyKeyword,
     makeKeywordToken,
-    IdentifierToken,
-    makeStringToken,
-    CommentToken
+    makePunctuatorToken,
 } from './token';
 
 class PyCharMap<V> {
@@ -294,7 +294,12 @@ class Scanner {
                         tokens.push(token);
                     }
                 } else {
-                    throw new Error(`Cannot consume char ${ch}, position: ${pos}`);
+                    const wrongToken = this.charBuffer.join('') + ch;
+                    const start = this.posBuffer.length > 0 ? this.posBuffer[0].start : 0;
+                    throw new PySyntaxError(
+                        `Unexpected token ${wrongToken}, ` +
+                        `line ${pos.line}, col ${start} - ${pos.stop}`
+                    );
                 }
             }
         }
@@ -305,7 +310,8 @@ class Scanner {
                 tokens.push(token);
             }
         } else {
-            throw new Error('No such token');
+            const wrongToken = this.charBuffer.join('');
+            throw new PySyntaxError(`Unexpected token ${wrongToken}`);
         }
         return tokens;
     }
@@ -332,7 +338,7 @@ class Scanner {
     /** 获取 Token，不修改 buffer 和 DFA */
     private getToken(): IToken {
         const factory = this.tokenFactories.get(this.dfa.current().name)
-            ?? throwErr(Error, 'Current node without a token factory');
+            ?? throwErr(Error, `Node ${this.dfa.current().name} without a token factory`);
         const tokenStr = this.charBuffer.join('');
         const tokenPos: Position = {
             line: this.posBuffer[0].line,
@@ -351,26 +357,23 @@ class Scanner {
 
     private initTokenFactories() {
         //Comment Token: c3
-        this.tokenFactories.set('c3', makeCommentToken);
+        this.tokenFactories.set('c3', (s, pos) => new CommentToken(s, pos));
         //identifier or keyword: id2
         this.tokenFactories.set('id2',
-            (s, pos) => isPythonKeyword(s)
-                ? makeKeywordToken(s, pos)
-                : new IdentifierToken(s, pos)
+            (s, pos) => isPyKeyword(s) ? makeKeywordToken(s, pos) : new IdentifierToken(s, pos)
         );
         //int: n2
-        this.tokenFactories.set('n2', (s, pos) => new IntToken(BigInt(s), pos));
+        this.tokenFactories.set('n2', (s, pos) => new IntToken(s, pos));
         //float: n4
-        this.tokenFactories.set('n4', (s, pos) => new FloatToken(Number.parseFloat(s), pos));
+        this.tokenFactories.set('n4', (s, pos) => new FloatToken(s, pos));
         //str: s4
-        this.tokenFactories.set('s4', (s, pos) => makeStringToken(s, pos));
-        //Symbol Token: o2-o20, o5-o13
+        this.tokenFactories.set('s4', (s, pos) => new StringToken(s, pos));
+        //Punctuator Token: o2-o20, o5-o13
         for (const name of itertools.chain(
-            map(i => 'o' + i, range(2, 20 + 1)),
-            map(i => 'd' + i, range(5, 13 + 1)))) {
-            this.tokenFactories.set(name, makeSymbolToken);
+            map(i => 'o' + i, range(2, 20 + 1)), map(i => 'd' + i, range(5, 13 + 1)))) {
+            this.tokenFactories.set(name, makePunctuatorToken);
         }
-        //Special Symbol Token: d2, d3, d4
+        //Special Punctuator Token: d2, d3, d4
         this.tokenFactories.set('d2', (_, pos) => new IndentIncToken(pos));
         this.tokenFactories.set('d3', (_, pos) => new IndentDecToken(pos));
         this.tokenFactories.set('d4', (_, pos) => new NewLineToken(pos));

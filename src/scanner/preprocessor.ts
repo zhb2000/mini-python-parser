@@ -1,6 +1,7 @@
 import * as strutils from '../utils/strutils';
 import { enumerate, range } from '../utils/pylike';
 import { Position } from './scanner';
+import { PySyntaxError } from './error';
 
 class NewLine {
     toString(): string {
@@ -58,7 +59,7 @@ function splitLine(line: string, lineNumber: number): [CharSequence[], CharSeque
         } else if (line[i] === '\t') {
             if (spaceCnt != 0) {
                 //TODO
-                throw new Error('Indent error');
+                throw new PySyntaxError('Indent error');
             }
             indents.push({
                 data: new IndentInc(),
