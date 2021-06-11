@@ -6,9 +6,8 @@ digraph G {
     //ignore whitespace characters
     1->1[label="whitespace"]
     //comment
-    c3[shape=doublecircle]
+    c2[shape=doublecircle]
     1 ->c2[label="#"]
-    c2->c3[label="NewLine"]
     c2->c2[label="[^NewLine]"]
     //identifier
     id2[shape=doublecircle]

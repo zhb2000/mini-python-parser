@@ -2,9 +2,8 @@ digraph G {
     rankdir = LR
     node[shape=circle]
     0[label="",color=transparent, width=0]
-    3[shape=doublecircle]
+    2[shape=doublecircle]
     0->1
     1->2[label="#"]
-    2->3[label="newline"]
     2->2[label="[^newline]"]
 }

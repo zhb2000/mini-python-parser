@@ -143,14 +143,11 @@ class Automaton {
         );
         //c2
         this.nodes.set('c2', {
-            name: 'c2', acceptable: false,
+            name: 'c2', acceptable: true,
             to(ch: PyChar) {
-                const key = (ch instanceof NewLine) ? 'c3' : 'c2';
-                return that.nodes.get(key);
+                return (ch instanceof NewLine) ? undefined : that.nodes.get('c2');
             }
         });
-        //c3
-        this.addNode('c3', true, new PyCharMap());
         //id2
         this.addNode('id2', true,
             new PyCharMap<string>()
@@ -356,8 +353,8 @@ class Scanner {
     }
 
     private initTokenFactories() {
-        //Comment Token: c3
-        this.tokenFactories.set('c3', (s, pos) => new CommentToken(s, pos));
+        //Comment Token: c2
+        this.tokenFactories.set('c2', (s, pos) => new CommentToken(s, pos));
         //identifier or keyword: id2
         this.tokenFactories.set('id2',
             (s, pos) => isPyKeyword(s) ? makeKeywordToken(s, pos) : new IdentifierToken(s, pos)

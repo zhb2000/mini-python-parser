@@ -65,6 +65,7 @@ const cases = [
             { type: 'LeftParenthesesToken', value: '(' },
             { type: 'StringToken', value: '"abcde"' },
             { type: 'RightParenthesesToken', value: ')' },
+            { type: 'NewLineToken', value: '' },
             { type: 'IdentifierToken', value: 'b' },
             { type: 'AssignToken', value: '=' },
             { type: 'IdentifierToken', value: 'b' },
