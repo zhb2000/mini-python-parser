@@ -5,7 +5,9 @@ import {
     list,
     range,
     sum,
-    itertools
+    itertools,
+    all,
+    any
 } from '../../src/utils/pylike';
 
 test('enumerate test 1', () => {
@@ -84,5 +86,25 @@ test('chain test 1', () => {
 test('chain test 2', () => {
     const arr = [...itertools.chain([1, 2, 3])];
     expect(arr).toEqual([1, 2, 3]);
+});
+//#endregion
+
+//#region all
+test('all test 1', () => {
+    expect(all([true, true, true])).toEqual(true);
+});
+
+test('all test 2', () => {
+    expect(all([true, false, true])).toEqual(false);
+});
+//#endregion
+
+//#region any
+test('any test 1', () => {
+    expect(any([false, true, false])).toEqual(true);
+});
+
+test('any test 2', () => {
+    expect(any([false, false, false])).toEqual(false);
 });
 //#endregion

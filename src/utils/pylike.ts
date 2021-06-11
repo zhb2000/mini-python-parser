@@ -70,6 +70,24 @@ function sum(iterable: Iterable<number>, start?: number): number {
     return ans;
 }
 
+function all(iterable: Iterable<boolean>): boolean {
+    for (const element of iterable) {
+        if (!element) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function any(iterable: Iterable<boolean>): boolean {
+    for (const element of iterable) {
+        if (element) {
+            return true;
+        }
+    }
+    return false;
+}
+
 export {
     list,
     map,
@@ -77,5 +95,7 @@ export {
     enumerate,
     range,
     sum,
+    all,
+    any,
     itertools
 };
