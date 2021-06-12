@@ -1,4 +1,4 @@
-// import * as token from '../scanner/token';
+import { Constructor, Optional } from '../utils/typing';
 import { PySyntaxError } from '../scanner/errors';
 import {
     IToken,
@@ -54,10 +54,9 @@ import {
     FalseToken,
     NoneToken,
 } from '../scanner/token';
-import { Constructor, Optional } from '../utils/typing';
 
-interface IGrammarSymbol {
-}
+/** 文法符号 */
+interface IGrammarSymbol { }
 
 /** 定义了三种操作的 token 序列 */
 interface ITokenSeq {
@@ -586,10 +585,13 @@ class Expression {
 }
 //#endregion
 
+//#region 语句
+
 //#region simple statement
 type SimpleStmt = ExpressionStmt | AssignStmt | PassStmt
     | BreakStmt | ContinueStmt | ReturnStmt | GlobalStmt;
 
+/** expression_stmt ::= expression newline */
 class ExpressionStmt {
     readonly expression: Expression;
     constructor(expression: Expression) { this.expression = expression; }
@@ -600,6 +602,7 @@ class ExpressionStmt {
     }
 }
 
+/** assign_stmt ::= expression "=" expression newline */
 class AssignStmt {
     readonly left: Expression;
     readonly right: Expression;
@@ -616,6 +619,7 @@ class AssignStmt {
     }
 }
 
+/** pass_stmt ::= pass newline */
 class PassStmt {
     static make(tokens: ITokenSeq): PassStmt {
         popExpectedToken(PassToken, tokens);
@@ -623,6 +627,8 @@ class PassStmt {
         return new PassStmt();
     }
 }
+
+/** break_stmt ::= "break" newline */
 class BreakStmt {
     static make(tokens: ITokenSeq): BreakStmt {
         popExpectedToken(BreakToken, tokens);
@@ -631,6 +637,7 @@ class BreakStmt {
     }
 }
 
+/** continue_stmt ::= "continue" newline */
 class ContinueStmt {
     static make(tokens: ITokenSeq): ContinueStmt {
         popExpectedToken(ContinueToken, tokens);
@@ -639,6 +646,7 @@ class ContinueStmt {
     }
 }
 
+/** return_stmt ::= "return" [expression] newline */
 class ReturnStmt {
     readonly expression?: Expression;
     constructor(expression?: Expression) { this.expression = expression; }
@@ -653,6 +661,7 @@ class ReturnStmt {
     }
 }
 
+/** global_stmt ::= "global" identifier_list */
 class GlobalStmt {
     readonly identifiers: IdentifierList;
     constructor(identifiers: IdentifierList) { this.identifiers = identifiers; }
@@ -664,6 +673,7 @@ class GlobalStmt {
     }
 }
 
+/** identifier_list ::= identifier {"," identifier} */
 class IdentifierList {
     readonly identifiers: Identifier[];
     constructor(identifiers: Identifier[]) { this.identifiers = identifiers; }
@@ -682,6 +692,7 @@ class IdentifierList {
 //#region compound statement
 type CompoundStmt = IfStmt | WhileStmt | FuncDef;
 
+/** suite ::= indent_inc statement {statement} indent_dec */
 class Suite {
     readonly statements: Statement[];
     constructor(statements: Statement[]) { this.statements = statements; }
@@ -696,6 +707,11 @@ class Suite {
     }
 }
 
+/** 
+ * if_stmt ::= "if" expression ":" newline suite
+ *             {"elif" expression ":" newline suite}
+ *             ["else" ":" newline suite]
+ */
 class IfStmt {
     readonly ifBranch: IfBranch;
     readonly elifBranches: ElifBranch[];
@@ -766,6 +782,7 @@ class ElseBranch {
     }
 }
 
+/** while_stmt ::= "while" expression ":" newline suite */
 class WhileStmt {
     readonly condition: Expression;
     readonly suite: Suite;
@@ -784,6 +801,10 @@ class WhileStmt {
 
 }
 
+/** 
+ * funcdef ::= "def" identifier "(" [parameter_list] ")" ":" newline suite
+ * parameter_list ::= identifier_list
+ */
 class FuncDef {
     readonly name: Identifier;
     readonly params?: IdentifierList;
@@ -847,6 +868,9 @@ function makeStatement(tokens: ITokenSeq): Statement {
     }
 }
 
+//#endregion
+
+/** program ::= {statement} */
 class Program {
     readonly statements: Statement[];
     constructor(statements: Statement[]) { this.statements = statements; }

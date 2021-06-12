@@ -133,18 +133,13 @@ class SourceCode {
     *iterCharsWithPos(): Iterable<[Position, PyChar]> {
         for (const seq of this.sequences) {
             if (strutils.isString(seq.data)) {
-                for (const [i, ch] of enumerate(seq.data as string, seq.position.start)) {
+                for (const [i, ch] of enumerate(
+                    seq.data as string, seq.position.start)) {
                     yield [{ line: seq.position.line, start: i, stop: i + 1 }, ch];
                 }
             } else {
                 yield [seq.position, seq.data];
             }
-        }
-    }
-
-    *iterChars(): Iterable<PyChar> {
-        for (const [_, ch] of this.iterCharsWithPos()) {
-            yield ch;
         }
     }
 }

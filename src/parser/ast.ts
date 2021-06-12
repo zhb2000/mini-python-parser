@@ -1,0 +1,3 @@
+interface IASTNode { }
+
+export { IASTNode };
