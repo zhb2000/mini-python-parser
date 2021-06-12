@@ -1,32 +1,26 @@
-import { throwErr } from "../utils/typing";
-import { IndentDec, IndentInc, NewLine, PyChar } from "./preprocessor";
+import { Constructor, throwErr } from "../utils/typing";
 
-class Position {
+interface IPosition {
     /** 行号 */
     line: number;
     /** 开始列号 */
     start: number;
     /** 结束列号 */
     stop: number;
-    constructor(line: number, start: number, stop: number) {
-        this.line = line;
-        this.start = start;
-        this.stop = stop;
-    }
 }
 
 interface IToken {
     readonly type: string;
     readonly value: string;
-    readonly position: Position;
+    readonly position: IPosition;
     repr(): { type: string, value: string; };
 }
 
 abstract class TokenBase implements IToken {
     readonly value: string;
-    readonly position: Position;
+    readonly position: IPosition;
     get type() { return this.constructor.name; }
-    constructor(value: string, position: Position) {
+    constructor(value: string, position: IPosition) {
         console.assert(this.verify(value));
         this.value = value;
         this.position = position;
@@ -38,9 +32,7 @@ abstract class TokenBase implements IToken {
 
 class CommentToken extends TokenBase {
     protected verify(s: string) { return s[0] === '#'; }
-    getComment(): string {
-        return this.value.substr(1);
-    }
+    getComment(): string { return this.value.substr(1); }
 }
 
 class IntToken extends TokenBase {
@@ -67,33 +59,33 @@ class StringToken extends TokenBase {
     }
 }
 
-class IdentifierToken extends TokenBase { }
+class IdentifierToken extends TokenBase { private _ = undefined; }
 
 //#region Keyword Token
 abstract class KeywordToken extends TokenBase {
-    protected abstract keyword: string;
-    protected verify(s: string) { return s === this.keyword; }
+    protected abstract keyword(): string;
+    protected verify(s: string) { return s === this.keyword(); }
 }
 
-class DefToken extends KeywordToken { get keyword() { return 'def'; } }
-class IfToken extends KeywordToken { get keyword() { return 'if'; } }
-class ElseToken extends KeywordToken { get keyword() { return 'else'; } }
-class ElifToken extends KeywordToken { get keyword() { return 'elif'; } }
-class WhileToken extends KeywordToken { get keyword() { return 'while'; } }
-class ReturnToken extends KeywordToken { get keyword() { return 'return'; } }
-class BreakToken extends KeywordToken { get keyword() { return 'break'; } }
-class ContinueToken extends KeywordToken { get keyword() { return 'continue'; } }
-class AndToken extends KeywordToken { get keyword() { return 'and'; } }
-class OrToken extends KeywordToken { get keyword() { return 'or'; } }
-class NotToken extends KeywordToken { get keyword() { return 'not'; } }
-class IsToken extends KeywordToken { get keyword() { return 'is'; } }
-class TrueToken extends KeywordToken { get keyword() { return 'True'; } }
-class FalseToken extends KeywordToken { get keyword() { return 'False'; } }
-class NoneToken extends KeywordToken { get keyword() { return 'None'; } }
-class PassToken extends KeywordToken { get keyword() { return 'pass'; } }
-class GlobalToken extends KeywordToken { get keyword() { return 'global'; } }
+class DefToken extends KeywordToken { protected keyword() { return 'def'; } }
+class IfToken extends KeywordToken { protected keyword() { return 'if'; } }
+class ElseToken extends KeywordToken { protected keyword() { return 'else'; } }
+class ElifToken extends KeywordToken { protected keyword() { return 'elif'; } }
+class WhileToken extends KeywordToken { protected keyword() { return 'while'; } }
+class ReturnToken extends KeywordToken { protected keyword() { return 'return'; } }
+class BreakToken extends KeywordToken { protected keyword() { return 'break'; } }
+class ContinueToken extends KeywordToken { protected keyword() { return 'continue'; } }
+class AndToken extends KeywordToken { protected keyword() { return 'and'; } }
+class OrToken extends KeywordToken { protected keyword() { return 'or'; } }
+class NotToken extends KeywordToken { protected keyword() { return 'not'; } }
+class IsToken extends KeywordToken { protected keyword() { return 'is'; } }
+class TrueToken extends KeywordToken { protected keyword() { return 'True'; } }
+class FalseToken extends KeywordToken { protected keyword() { return 'False'; } }
+class NoneToken extends KeywordToken { protected keyword() { return 'None'; } }
+class PassToken extends KeywordToken { protected keyword() { return 'pass'; } }
+class GlobalToken extends KeywordToken { protected keyword() { return 'global'; } }
 
-function makeKeywordToken(s: string, pos: Position): KeywordToken {
+function makeKeywordToken(s: string, pos: IPosition): KeywordToken {
     const ctor = keywordStr2Ctor.get(s)
         ?? throwErr(Error, `${s} is not a Python keyword.`);
     return new ctor(s, pos);
@@ -103,7 +95,7 @@ function isPyKeyword(s: string): boolean {
     return keywordStr2Ctor.has(s);
 }
 
-const keywordStr2Ctor = new Map([
+const keywordStr2Ctor = new Map<string, Constructor<KeywordToken>>([
     ['def', DefToken],
     ['if', IfToken],
     ['else', ElseToken],
@@ -127,53 +119,53 @@ const keywordStr2Ctor = new Map([
 
 //#region Punctuator Token
 abstract class PunctuatorToken extends TokenBase {
-    protected abstract punctuator: string;
-    protected verify(s: string) { return s === this.punctuator; }
+    protected abstract punctuator(): string;
+    protected verify(s: string) { return s === this.punctuator(); }
 }
 
-class LessToken extends PunctuatorToken { get punctuator() { return '<'; } }
-class LeqToken extends PunctuatorToken { get punctuator() { return '<='; } }
-class GreaterToken extends PunctuatorToken { get punctuator() { return '>'; } }
-class GeqToken extends PunctuatorToken { get punctuator() { return '>='; } }
-class EqualsToken extends PunctuatorToken { get punctuator() { return '=='; } }
-class NotEqualsToken extends PunctuatorToken { get punctuator() { return '!='; } }
-class AssignToken extends PunctuatorToken { get punctuator() { return '='; } }
-class PlusToken extends PunctuatorToken { get punctuator() { return '+'; } }
-class MinusToken extends PunctuatorToken { get punctuator() { return '-'; } }
-class MultiplyToken extends PunctuatorToken { get punctuator() { return '*'; } }
-class PowToken extends PunctuatorToken { get punctuator() { return '**'; } }
-class DivToken extends PunctuatorToken { get punctuator() { return '/'; } }
-class DivIntToken extends PunctuatorToken { get punctuator() { return '//'; } }
-class ModToken extends PunctuatorToken { get punctuator() { return '%'; } }
-class ShiftLeftToken extends PunctuatorToken { get punctuator() { return '<<'; } }
-class ShiftRightToken extends PunctuatorToken { get punctuator() { return '>>'; } }
-class BitAndToken extends PunctuatorToken { get punctuator() { return '&'; } }
-class BitOrToken extends PunctuatorToken { get punctuator() { return '|'; } }
-class BitNotToken extends PunctuatorToken { get punctuator() { return '~'; } }
-class BitXorToken extends PunctuatorToken { get punctuator() { return '^'; } }
+class LessToken extends PunctuatorToken { protected punctuator() { return '<'; } }
+class LeqToken extends PunctuatorToken { protected punctuator() { return '<='; } }
+class GreaterToken extends PunctuatorToken { protected punctuator() { return '>'; } }
+class GeqToken extends PunctuatorToken { protected punctuator() { return '>='; } }
+class EqualsToken extends PunctuatorToken { protected punctuator() { return '=='; } }
+class NotEqualsToken extends PunctuatorToken { protected punctuator() { return '!='; } }
+class AssignToken extends PunctuatorToken { protected punctuator() { return '='; } }
+class PlusToken extends PunctuatorToken { protected punctuator() { return '+'; } }
+class MinusToken extends PunctuatorToken { protected punctuator() { return '-'; } }
+class MultiplyToken extends PunctuatorToken { protected punctuator() { return '*'; } }
+class PowToken extends PunctuatorToken { protected punctuator() { return '**'; } }
+class DivToken extends PunctuatorToken { protected punctuator() { return '/'; } }
+class DivIntToken extends PunctuatorToken { protected punctuator() { return '//'; } }
+class ModToken extends PunctuatorToken { protected punctuator() { return '%'; } }
+class ShiftLeftToken extends PunctuatorToken { protected punctuator() { return '<<'; } }
+class ShiftRightToken extends PunctuatorToken { protected punctuator() { return '>>'; } }
+class BitAndToken extends PunctuatorToken { protected punctuator() { return '&'; } }
+class BitOrToken extends PunctuatorToken { protected punctuator() { return '|'; } }
+class BitNotToken extends PunctuatorToken { protected punctuator() { return '~'; } }
+class BitXorToken extends PunctuatorToken { protected punctuator() { return '^'; } }
 /** 左圆括号 `(` */
-class LeftParenthesesToken extends PunctuatorToken { get punctuator() { return '('; } }
+class LeftParenthesesToken extends PunctuatorToken { protected punctuator() { return '('; } }
 /** 右圆括号 `)` */
-class RightParenthesesToken extends PunctuatorToken { get punctuator() { return ')'; } }
+class RightParenthesesToken extends PunctuatorToken { protected punctuator() { return ')'; } }
 /** 左方括号 `[` */
-class LeftBracketToken extends PunctuatorToken { get punctuator() { return '['; } }
+class LeftBracketToken extends PunctuatorToken { protected punctuator() { return '['; } }
 /** 右方括号 `]` */
-class RightBracketToken extends PunctuatorToken { get punctuator() { return ']'; } }
+class RightBracketToken extends PunctuatorToken { protected punctuator() { return ']'; } }
 /** 左花括号 `{` */
-class LeftBraceToken extends PunctuatorToken { get punctuator() { return '{'; } }
+class LeftBraceToken extends PunctuatorToken { protected punctuator() { return '{'; } }
 /** 右花括号 `}` */
-class RightBraceToken extends PunctuatorToken { get punctuator() { return '}'; } }
-class CommaToken extends PunctuatorToken { get punctuator() { return ','; } }
-class DotToken extends PunctuatorToken { get punctuator() { return '.'; } }
-class ColonToken extends PunctuatorToken { get punctuator() { return ':'; } }
+class RightBraceToken extends PunctuatorToken { protected punctuator() { return '}'; } }
+class CommaToken extends PunctuatorToken { protected punctuator() { return ','; } }
+class DotToken extends PunctuatorToken { protected punctuator() { return '.'; } }
+class ColonToken extends PunctuatorToken { protected punctuator() { return ':'; } }
 
-function makePunctuatorToken(s: string, pos: Position): PunctuatorToken {
+function makePunctuatorToken(s: string, pos: IPosition): PunctuatorToken {
     const ctor = punctuatorStr2Ctor.get(s)
         ?? throwErr(Error, `${s} is not a Python symbol.`);
     return new ctor(s, pos);
 }
 
-const punctuatorStr2Ctor = new Map([
+const punctuatorStr2Ctor = new Map<string, Constructor<PunctuatorToken>>([
     ['<', LessToken],
     ['<=', LeqToken],
     ['>', GreaterToken],
@@ -208,20 +200,20 @@ const punctuatorStr2Ctor = new Map([
 
 //#region Special Punctuator Token
 abstract class SpecialPunctuatorToken implements IToken {
-    readonly position: Position;
+    readonly position: IPosition;
     get value() { return ''; }
     get type() { return this.constructor.name; }
-    constructor(position: Position) { this.position = position; }
+    constructor(position: IPosition) { this.position = position; }
     toString() { return `{ type: ${this.type}, value: ${this.value} }`; }
     repr() { return { 'type': this.type, 'value': this.value }; }
 }
-class IndentIncToken extends SpecialPunctuatorToken { }
-class IndentDecToken extends SpecialPunctuatorToken { }
-class NewLineToken extends SpecialPunctuatorToken { }
+class IndentIncToken extends SpecialPunctuatorToken { private _ = undefined; }
+class IndentDecToken extends SpecialPunctuatorToken { private _ = undefined; }
+class NewLineToken extends SpecialPunctuatorToken { private _ = undefined; }
 //#endregion
 
 export {
-    Position,
+    IPosition,
     IToken,
     CommentToken,
     IdentifierToken,

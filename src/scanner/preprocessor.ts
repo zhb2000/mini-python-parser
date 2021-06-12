@@ -4,11 +4,11 @@ import { Position } from './scanner';
 import { PySyntaxError } from './errors';
 
 /** 换行，相当于其他语言里的分号 */
-class NewLine { toString() { return 'NewLine'; } }
+class NewLine { toString() { return 'NewLine'; } private _ = undefined; }
 /** 缩进增，相当于其他语言里的左花括号 */
-class IndentInc { toString() { return 'IndentInc'; } }
+class IndentInc { toString() { return 'IndentInc'; } private _ = undefined; }
 /** 缩进减，相当于其他语言里的左花括号 */
-class IndentDec { toString() { return 'IndentDec'; } }
+class IndentDec { toString() { return 'IndentDec'; } private _ = undefined; }
 
 type PyChar = string | NewLine | IndentInc | IndentDec;
 

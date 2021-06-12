@@ -116,6 +116,7 @@ class TrueLiteral {
         popExpectedToken(TrueToken, tokens);
         return new TrueLiteral();
     }
+    private _ = undefined;
 }
 
 class FalseLiteral {
@@ -123,12 +124,14 @@ class FalseLiteral {
         popExpectedToken(FalseToken, tokens);
         return new FalseLiteral();
     }
+    private _ = undefined;
 }
 class NoneLiteral {
     static make(tokens: ITokenSeq): NoneLiteral {
         popExpectedToken(NoneToken, tokens);
         return new NoneLiteral();
     }
+    private _ = undefined;
 }
 
 class StrLiteral {
@@ -138,6 +141,7 @@ class StrLiteral {
         const str = popExpectedToken(StringToken, tokens);
         return new StrLiteral(str.getString());
     }
+    private _ = undefined;
 }
 
 class IntLiteral {
@@ -147,6 +151,7 @@ class IntLiteral {
         const integer = popExpectedToken(IntToken, tokens);
         return new IntLiteral(integer.getInt());
     }
+    private _ = undefined;
 }
 
 class FloatLiteral {
@@ -156,6 +161,7 @@ class FloatLiteral {
         const float = popExpectedToken(FloatToken, tokens);
         return new FloatLiteral(float.getFloat());
     }
+    private _ = undefined;
 }
 
 class ParenthesesExpr {
@@ -167,6 +173,7 @@ class ParenthesesExpr {
         popExpectedToken(RightParenthesesToken, tokens);
         return new ParenthesesExpr(expression);
     }
+    private _ = undefined;
 }
 
 function makeAtom(tokens: ITokenSeq): Atom {
@@ -227,6 +234,7 @@ class Primary {
         }
         return new Primary(atom, appends);
     }
+    private _ = undefined;
 }
 
 type PrimaryAppend = AttrRefAppend | SubscriptionAppend | CallAppend;
@@ -239,6 +247,7 @@ class AttrRefAppend {
         const id = Identifier.make(tokens);
         return new AttrRefAppend(id);
     }
+    private _ = undefined;
 }
 
 class SubscriptionAppend {
@@ -250,6 +259,7 @@ class SubscriptionAppend {
         popExpectedToken(RightBracketToken, tokens);
         return new SubscriptionAppend(exprList);
     }
+    private _ = undefined;
 }
 
 class CallAppend {
@@ -264,6 +274,7 @@ class CallAppend {
         popExpectedToken(RightParenthesesToken, tokens);
         return new CallAppend(exprList);
     }
+    private _ = undefined;
 }
 
 /** expr_list ::= expr {"," expr} */
@@ -281,14 +292,15 @@ class ExprList {
         }
         return new ExprList(expressions);
     }
+    private _ = undefined;
 }
 //#endregion
 
 //#region 幂运算
 /** power ::= primary ["**" u_expr] */
 class Power {
-    primary: Primary;
-    uExprs: UExpr[];
+    readonly primary: Primary;
+    readonly uExprs: UExpr[];
     constructor(primary: Primary, uExprs: UExpr[]) {
         this.primary = primary;
         this.uExprs = uExprs;
@@ -303,6 +315,7 @@ class Power {
         }
         return new Power(primary, uExprs);
     }
+    private _ = undefined;
 }
 //#endregion
 
@@ -322,6 +335,7 @@ abstract class UExpr {
             return UExprPower.make(tokens);
         }
     }
+    private _abs = undefined;
 }
 
 class UExprWithOp extends UExpr {
@@ -347,6 +361,7 @@ class UExprWithOp extends UExpr {
             throw new PySyntaxError(`Unexpected token, get ${op.type} here.`);
         }
     }
+    private _ = undefined;
 }
 
 class UExprPower extends UExpr {
@@ -355,6 +370,7 @@ class UExprPower extends UExpr {
     static make(tokens: ITokenSeq): UExprPower {
         return new UExprPower(Power.make(tokens));
     }
+    private _ = undefined;
 }
 //#endregion
 
@@ -470,41 +486,44 @@ class InfixExprAppend<Op extends IToken, T>{
 /** m_expr ::= u_expr {"*" u_expr | "//" u_expr | "/" u_expr |"%" u_expr} */
 class MExpr extends InfixExpr<
     MultiplyToken | DivIntToken | DivToken | ModToken,
-    UExpr> { }
-const mExprFac = new InfixExprFactory(
+    UExpr> { private _ = undefined; }
+const mExprFac = new InfixExprFactory<
     MExpr,
-    [MultiplyToken, DivIntToken, DivToken, ModToken],
-    tokens => UExpr.make(tokens)
-);
+    MultiplyToken | DivIntToken | DivToken | ModToken,
+    UExpr>(
+        MExpr,
+        [MultiplyToken, DivIntToken, DivToken, ModToken],
+        tokens => UExpr.make(tokens)
+    );
 
 /** a_expr ::= m_expr {"+" m_expr | "-" m_expr} */
-class AExpr extends InfixExpr<PlusToken | MinusToken, MExpr> { }
-const aExprFac = new InfixExprFactory(
+class AExpr extends InfixExpr<PlusToken | MinusToken, MExpr> { private _ = undefined; }
+const aExprFac = new InfixExprFactory<AExpr, PlusToken | MinusToken, MExpr>(
     AExpr, [PlusToken, MinusToken], tokens => mExprFac.make(tokens)
 );
 //#endregion
 
 //#region 二元位运算
 /** shift_expr ::= a_expr {"<<" a_expr | ">>" a_expr} */
-class ShiftExpr extends InfixExpr<ShiftLeftToken | ShiftRightToken, AExpr> { }
-const shiftExprFac = new InfixExprFactory(
+class ShiftExpr extends InfixExpr<ShiftLeftToken | ShiftRightToken, AExpr> { private _ = undefined; }
+const shiftExprFac = new InfixExprFactory<ShiftExpr, ShiftLeftToken | ShiftRightToken, AExpr>(
     ShiftExpr, [ShiftLeftToken, ShiftRightToken], tokens => aExprFac.make(tokens)
 );
 
 /** and_expr ::= shift_expr {"&" shift_expr} */
-class AndExpr extends InfixExpr<BitAndToken, ShiftExpr> { }
+class AndExpr extends InfixExpr<BitAndToken, ShiftExpr> { private _ = undefined; }
 const andExprFac = new InfixExprFactory(
     AndExpr, [BitAndToken], tokens => shiftExprFac.make(tokens)
 );
 
 /** xor_expr ::= and_expr {"^" and_expr} */
-class XorExpr extends InfixExpr<BitXorToken, AndExpr> { }
+class XorExpr extends InfixExpr<BitXorToken, AndExpr> { private _ = undefined; }
 const xorExprFac = new InfixExprFactory(
     XorExpr, [BitXorToken], tokens => andExprFac.make(tokens)
 );
 
 /** or_expr ::= xor_expr {"|" xor_expr} */
-class OrExpr extends InfixExpr<BitOrToken, XorExpr> { }
+class OrExpr extends InfixExpr<BitOrToken, XorExpr> { private _ = undefined; }
 const orExprFac = new InfixExprFactory(
     OrExpr, [BitOrToken], tokens => xorExprFac.make(tokens)
 );
@@ -515,7 +534,7 @@ const orExprFac = new InfixExprFactory(
 type CompOperator = LessToken | LeqToken | GreaterToken | GeqToken
     | EqualsToken | NotEqualsToken | IsToken;
 /** comparison ::= or_expr {comp_operator or_expr} */
-class Comparison extends InfixExpr<CompOperator, OrExpr> { }
+class Comparison extends InfixExpr<CompOperator, OrExpr> { private _ = undefined; }
 const comparisonFac = new InfixExprFactory<Comparison, CompOperator, OrExpr>(
     Comparison,
     [LessToken, LeqToken, GreaterToken, GeqToken, EqualsToken, NotEqualsToken, IsToken],
@@ -525,7 +544,7 @@ const comparisonFac = new InfixExprFactory<Comparison, CompOperator, OrExpr>(
 
 //#region 布尔运算
 /** not_test ::= "not" not_test | comparison */
-class NotTest {
+abstract class NotTest {
     static make(tokens: ITokenSeq): NotTest {
         if (!tokens.hasNext()) {
             throw new PySyntaxError('Tokens goes to end.');
@@ -537,6 +556,7 @@ class NotTest {
             return NotTestComparison.make(tokens);
         }
     }
+    private _abs = undefined;
 }
 
 class NotTestWithOp extends NotTest {
@@ -552,6 +572,7 @@ class NotTestWithOp extends NotTest {
         const notTest = NotTest.make(tokens);
         return new NotTestWithOp(op, notTest);
     }
+    private _ = undefined;
 }
 
 class NotTestComparison extends NotTest {
@@ -560,16 +581,17 @@ class NotTestComparison extends NotTest {
     static make(tokens: ITokenSeq): NotTestComparison {
         return new NotTestComparison(comparisonFac.make(tokens));
     }
+    private _ = undefined;
 }
 
 /** and_test ::= not_test {"and" not_test} */
-class AndTest extends InfixExpr<AndToken, NotTest> { }
+class AndTest extends InfixExpr<AndToken, NotTest> { private _ = undefined; }
 const andTestFac = new InfixExprFactory(
     AndTest, [AndToken], tokens => NotTest.make(tokens)
 );
 
 /** or_test ::= and_test {"or" and_test} */
-class OrTest extends InfixExpr<OrToken, AndTest> { }
+class OrTest extends InfixExpr<OrToken, AndTest> { private _ = undefined; }
 const orTestFac = new InfixExprFactory(
     OrTest, [OrToken], tokens => andTestFac.make(tokens)
 );
@@ -582,6 +604,7 @@ class Expression {
         const orTest = orTestFac.make(tokens);
         return new Expression(orTest);
     }
+    private _ = undefined;
 }
 //#endregion
 
@@ -600,6 +623,7 @@ class ExpressionStmt {
         popExpectedToken(NewLineToken, tokens);
         return new ExpressionStmt(expression);
     }
+    private _ = undefined;
 }
 
 /** assign_stmt ::= expression "=" expression newline */
@@ -617,6 +641,7 @@ class AssignStmt {
         popExpectedToken(NewLineToken, tokens);
         return new AssignStmt(left, right);
     }
+    private _ = undefined;
 }
 
 /** pass_stmt ::= pass newline */
@@ -626,6 +651,7 @@ class PassStmt {
         popExpectedToken(NewLineToken, tokens);
         return new PassStmt();
     }
+    private _ = undefined;
 }
 
 /** break_stmt ::= "break" newline */
@@ -635,6 +661,7 @@ class BreakStmt {
         popExpectedToken(NewLineToken, tokens);
         return new BreakStmt();
     }
+    private _ = undefined;
 }
 
 /** continue_stmt ::= "continue" newline */
@@ -644,6 +671,7 @@ class ContinueStmt {
         popExpectedToken(NewLineToken, tokens);
         return new ContinueStmt();
     }
+    private _ = undefined;
 }
 
 /** return_stmt ::= "return" [expression] newline */
@@ -659,6 +687,7 @@ class ReturnStmt {
         popExpectedToken(NewLineToken, tokens);
         return new ReturnStmt(expression);
     }
+    private _ = undefined;
 }
 
 /** global_stmt ::= "global" identifier_list */
@@ -671,6 +700,7 @@ class GlobalStmt {
         popExpectedToken(NewLineToken, tokens);
         return new GlobalStmt(identifiers);
     }
+    private _ = undefined;
 }
 
 /** identifier_list ::= identifier {"," identifier} */
@@ -686,6 +716,7 @@ class IdentifierList {
         }
         return new IdentifierList(identifiers);
     }
+    private _ = undefined;
 }
 //#endregion
 
@@ -705,6 +736,7 @@ class Suite {
         popExpectedToken(IndentDecToken, tokens);
         return new Suite(statements);
     }
+    private _ = undefined;
 }
 
 /** 
@@ -733,7 +765,7 @@ class IfStmt {
         }
         return new IfStmt(ifBranch, elifBranches, elseBranch);
     }
-
+    private _ = undefined;
 }
 
 class IfBranch {
@@ -751,6 +783,7 @@ class IfBranch {
         const suite = Suite.make(tokens);
         return new IfBranch(cond, suite);
     }
+    private _ = undefined;
 }
 
 class ElifBranch {
@@ -768,6 +801,7 @@ class ElifBranch {
         const suite = Suite.make(tokens);
         return new ElifBranch(cond, suite);
     }
+    private _ = undefined;
 }
 
 class ElseBranch {
@@ -780,6 +814,7 @@ class ElseBranch {
         const suite = Suite.make(tokens);
         return new ElseBranch(suite);
     }
+    private _ = undefined;
 }
 
 /** while_stmt ::= "while" expression ":" newline suite */
@@ -798,7 +833,7 @@ class WhileStmt {
         const suite = Suite.make(tokens);
         return new WhileStmt(cond, suite);
     }
-
+    private _ = undefined;
 }
 
 /** 
@@ -828,6 +863,7 @@ class FuncDef {
         const suite = Suite.make(tokens);
         return new FuncDef(funcName, params, suite);
     }
+    private _ = undefined;
 }
 //#endregion
 
@@ -881,6 +917,7 @@ class Program {
         }
         return new Program(statements);
     }
+    private _ = undefined;
 }
 
 export { Program, ITokenSeq };

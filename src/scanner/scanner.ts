@@ -4,7 +4,7 @@ import { PySyntaxError } from './errors';
 import { PyChar, SourceCode } from './preprocessor';
 import { Automaton } from './dfa';
 import {
-    Position,
+    IPosition,
     IToken,
     CommentToken,
     IntToken,
@@ -22,10 +22,10 @@ import {
 class Scanner {
     private readonly dfa = new Automaton();
     private readonly charBuffer: PyChar[] = [];
-    private readonly posBuffer: Position[] = [];
+    private readonly posBuffer: IPosition[] = [];
     /** 状态名称 -> 制造对应类型 Token 的工厂函数 */
     private readonly tokenFactories =
-        new Map<string, (s: string, pos: Position) => IToken>();
+        new Map<string, (s: string, pos: IPosition) => IToken>();
 
     constructor() {
         this.initTokenFactories();
@@ -82,7 +82,7 @@ class Scanner {
         return this.dfa.canConsume(ch);
     }
 
-    private consume(ch: PyChar, pos: Position) {
+    private consume(ch: PyChar, pos: IPosition) {
         this.dfa.consume(ch);
         //若转移后仍在开始状态，表明读入的是空白字符
         //忽略空白字符，不要放到 buffer 中
@@ -97,7 +97,7 @@ class Scanner {
         const factory = this.tokenFactories.get(this.dfa.current().name)
             ?? throwErr(Error, `Node ${this.dfa.current().name} without a token factory`);
         const tokenStr = this.charBuffer.join('');
-        const tokenPos: Position = {
+        const tokenPos: IPosition = {
             line: this.posBuffer[0].line,
             start: this.posBuffer[0].start,
             stop: this.posBuffer[this.posBuffer.length - 1].stop
@@ -137,4 +137,4 @@ class Scanner {
     }
 }
 
-export { Position, Scanner };
+export { IPosition as Position, Scanner };
