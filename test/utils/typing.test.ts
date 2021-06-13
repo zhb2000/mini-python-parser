@@ -1,4 +1,4 @@
-import { throwErr, asNonNull } from '../../src/utils/typing';
+import { throwErr, asNonNull } from '../../src/utils/enhance';
 
 test('throwErr test 1', () => {
     expect(() => throwErr(Error, 'msg')).toThrowError('msg');

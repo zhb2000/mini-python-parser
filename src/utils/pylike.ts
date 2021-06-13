@@ -1,4 +1,4 @@
-import { throwErr } from './typing';
+import { throwErr } from './enhance';
 import * as itertools from './pylike-itertools';
 
 function list(): [];

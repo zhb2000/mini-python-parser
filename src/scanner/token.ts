@@ -1,4 +1,4 @@
-import { Constructor, throwErr } from "../utils/typing";
+import { assert, Constructor, throwErr } from "../utils/enhance";
 
 interface IPosition {
     /** 行号 */
@@ -21,7 +21,7 @@ abstract class TokenBase implements IToken {
     readonly position: IPosition;
     get type() { return this.constructor.name; }
     constructor(value: string, position: IPosition) {
-        console.assert(this.verify(value));
+        assert(this.verify(value));
         this.value = value;
         this.position = position;
     }

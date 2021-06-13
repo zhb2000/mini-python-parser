@@ -1,3 +1,5 @@
+import { assert } from "./enhance";
+
 /** 是否为空串或 `null` 或 `undefined` */
 function isEmpty(s: string | undefined | null): boolean {
     return s == null || s.length === 0;
@@ -15,13 +17,13 @@ function isString(s: any): boolean {
 
 /** 是否为数字字符 */
 function isdigit(ch: string): boolean {
-    console.assert(ch.length === 1, 'ch is not a char');
+    assert(ch.length === 1, 'ch is not a char');
     return /^[0-9]$/.test(ch);
 }
 
 /** 是否为英文字母字符 */
 function isalpha(ch: string): boolean {
-    console.assert(ch.length === 1, 'ch is not a char');
+    assert(ch.length === 1, 'ch is not a char');
     return /^[a-zA-Z]$/.test(ch);
 }
 

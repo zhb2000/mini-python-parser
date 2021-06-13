@@ -1,5 +1,5 @@
 import { isdigit, isalpha } from '../utils/strutils';
-import { asNonNull, Optional } from '../utils/typing';
+import { asNonNull, Optional } from '../utils/enhance';
 import { itertools, map, range } from '../utils/pylike';
 import { IndentInc, IndentDec, NewLine, PyChar } from './preprocessor';
 

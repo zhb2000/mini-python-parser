@@ -58,7 +58,7 @@ test('isdigit test 2', () => {
 });
 
 test('isdigit test 3', () => {
-    expect(isdigit('235')).toEqual(false);
+    expect(() => isdigit('235')).toThrow();
 });
 
 test('isdigit test 4', () => {

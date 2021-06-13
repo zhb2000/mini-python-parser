@@ -11,4 +11,19 @@ function asNonNull<T>(obj: T | undefined | null): T {
     return obj ?? throwErr(Error, 'Null check failed.');
 }
 
-export { Optional, Constructor, throwErr, asNonNull };
+function assert(value: any, message?: string) {
+    if (!value) {
+        const msg = (message != null)
+            ? `Assertion failed: ${message}`
+            : 'Assertion failed';
+        throw new Error(msg);
+    }
+}
+
+export {
+    Optional,
+    Constructor,
+    throwErr,
+    asNonNull,
+    assert
+};

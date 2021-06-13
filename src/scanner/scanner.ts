@@ -1,5 +1,5 @@
 import { itertools, map, range } from '../utils/pylike';
-import { throwErr } from '../utils/typing';
+import { throwErr } from '../utils/enhance';
 import { PySyntaxError } from './errors';
 import { PyChar, SourceCode } from './preprocessor';
 import { Automaton } from './dfa';

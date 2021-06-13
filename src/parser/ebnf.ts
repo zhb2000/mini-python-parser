@@ -1,4 +1,4 @@
-import { Constructor, Optional } from '../utils/typing';
+import { Constructor, Optional } from '../utils/enhance';
 import { PySyntaxError } from '../scanner/errors';
 import {
     IToken,
@@ -56,7 +56,10 @@ import {
 } from '../scanner/token';
 
 /** 文法符号 */
-interface IGrammarSymbol { }
+interface IGrammarSymbol {
+    readonly type: string;
+    repr(): { type: string; };
+}
 
 /** 定义了三种操作的 token 序列 */
 interface ITokenSeq {
@@ -102,41 +105,54 @@ type Atom = Identifier | Literal | ParenthesesExpr;
 type Literal = StrLiteral | IntLiteral | FloatLiteral
     | TrueLiteral | FalseLiteral | NoneLiteral;
 
-class Identifier {
+class Identifier implements IGrammarSymbol {
+    readonly type = 'Identifier';
     readonly name: string;
     constructor(name: string) { this.name = name; }
+    repr() { return { type: this.type, name: this.name }; }
     static make(tokens: ITokenSeq): Identifier {
         const id = popExpectedToken(IdentifierToken, tokens);
         return new Identifier(id.value);
     }
 }
 
-class TrueLiteral {
+class KeywordLiteral implements IGrammarSymbol {
+    get type() { return this.constructor.name; }
+    repr() { return { type: this.type }; }
+}
+
+function makeKeywordLiteral<L extends KeywordLiteral, T extends IToken>(
+    Literal: Constructor<L>, Token: Constructor<T>, tokens: ITokenSeq): L {
+    popExpectedToken(Token, tokens);
+    return new Literal();
+}
+
+class TrueLiteral extends KeywordLiteral {
     static make(tokens: ITokenSeq): TrueLiteral {
-        popExpectedToken(TrueToken, tokens);
-        return new TrueLiteral();
+        return makeKeywordLiteral(TrueLiteral, TrueToken, tokens);
     }
     private _ = undefined;
 }
 
-class FalseLiteral {
+class FalseLiteral extends KeywordLiteral {
     static make(tokens: ITokenSeq): FalseLiteral {
-        popExpectedToken(FalseToken, tokens);
-        return new FalseLiteral();
-    }
-    private _ = undefined;
-}
-class NoneLiteral {
-    static make(tokens: ITokenSeq): NoneLiteral {
-        popExpectedToken(NoneToken, tokens);
-        return new NoneLiteral();
+        return makeKeywordLiteral(FalseLiteral, FalseToken, tokens);
     }
     private _ = undefined;
 }
 
-class StrLiteral {
+class NoneLiteral extends KeywordLiteral {
+    static make(tokens: ITokenSeq): NoneLiteral {
+        return makeKeywordLiteral(NoneLiteral, NoneToken, tokens);
+    }
+    private _ = undefined;
+}
+
+class StrLiteral implements IGrammarSymbol {
+    readonly type = 'StrLiteral';
     readonly value: string;
     constructor(value: string) { this.value = value; }
+    repr() { return { type: this.type, value: this.value }; }
     static make(tokens: ITokenSeq): StrLiteral {
         const str = popExpectedToken(StringToken, tokens);
         return new StrLiteral(str.getString());
@@ -144,9 +160,11 @@ class StrLiteral {
     private _ = undefined;
 }
 
-class IntLiteral {
+class IntLiteral implements IGrammarSymbol {
+    readonly type = 'IntLiteral';
     readonly value: bigint;
     constructor(value: bigint) { this.value = value; }
+    repr() { return { type: this.type, value: this.value }; }
     static make(tokens: ITokenSeq): IntLiteral {
         const integer = popExpectedToken(IntToken, tokens);
         return new IntLiteral(integer.getInt());
@@ -154,9 +172,11 @@ class IntLiteral {
     private _ = undefined;
 }
 
-class FloatLiteral {
+class FloatLiteral implements IGrammarSymbol {
+    readonly type = 'FloatLiteral';
     readonly value: number;
     constructor(value: number) { this.value = value; }
+    repr() { return { type: this.type, value: this.value }; }
     static make(tokens: ITokenSeq): FloatLiteral {
         const float = popExpectedToken(FloatToken, tokens);
         return new FloatLiteral(float.getFloat());
@@ -164,9 +184,11 @@ class FloatLiteral {
     private _ = undefined;
 }
 
-class ParenthesesExpr {
+class ParenthesesExpr implements IGrammarSymbol {
+    readonly type = 'ParenthesesExpr';
     readonly expression: Expression;
     constructor(expression: Expression) { this.expression = expression; }
+    repr(): any { return { type: this.type, expression: this.expression.repr() }; }
     static make(tokens: ITokenSeq): ParenthesesExpr {
         popExpectedToken(LeftParenthesesToken, tokens);
         const expression = Expression.make(tokens);
@@ -176,31 +198,29 @@ class ParenthesesExpr {
     private _ = undefined;
 }
 
+const token2AtomFac = new Map<Constructor<IToken>, (tokens: ITokenSeq) => Atom>([
+    [IdentifierToken, Identifier.make],
+    [StringToken, StrLiteral.make],
+    [IntToken, IntLiteral.make],
+    [FloatToken, FloatLiteral.make],
+    [TrueToken, TrueLiteral.make],
+    [FalseToken, FalseLiteral.make],
+    [NoneToken, NoneLiteral.make],
+    [LeftParenthesesToken, ParenthesesExpr.make],
+]);
+
 function makeAtom(tokens: ITokenSeq): Atom {
     if (!tokens.hasNext()) {
         throw new PySyntaxError(
             'Expect Atom, but token sequence goes to end.');
     }
     const token = tokens.viewNext();
-    if (token instanceof IdentifierToken) {
-        return Identifier.make(tokens);
-    } else if (token instanceof StringToken) {
-        return StrLiteral.make(tokens);
-    } else if (token instanceof IntToken) {
-        return IntLiteral.make(tokens);
-    } else if (token instanceof FloatToken) {
-        return FloatLiteral.make(tokens);
-    } else if (token instanceof TrueToken) {
-        return TrueLiteral.make(tokens);
-    } else if (token instanceof FalseToken) {
-        return FalseLiteral.make(tokens);
-    } else if (token instanceof NoneToken) {
-        return NoneLiteral.make(tokens);
-    } else if (token instanceof LeftParenthesesToken) {
-        return ParenthesesExpr.make(tokens);
-    } else {
-        throw new PySyntaxError(`Expect Atom, but get ${token.type} here.`);
+    for (const [TokenType, make] of token2AtomFac.entries()) {
+        if (token instanceof TokenType) {
+            return make(tokens);
+        }
     }
+    throw new PySyntaxError(`Expect Atom, but get ${token.type} here.`);
 }
 //#endregion
 
@@ -208,12 +228,20 @@ function makeAtom(tokens: ITokenSeq): Atom {
 /**
  * primary ::= atom {"." identifier | "[" expr_list "]" | "(" [expr_list] ")"}
  */
-class Primary {
+class Primary implements IGrammarSymbol {
+    readonly type = 'Primary';
     readonly atom: Atom;
     readonly appends: PrimaryAppend[];
     constructor(atom: Atom, appends: PrimaryAppend[]) {
         this.atom = atom;
         this.appends = appends;
+    }
+    repr(): any {
+        return {
+            type: this.type,
+            atom: this.atom.repr(),
+            appends: this.appends.map(x => x.repr())
+        };
     }
     static make(tokens: ITokenSeq): Primary {
         const isExpected = (token: IToken) =>
@@ -239,9 +267,11 @@ class Primary {
 
 type PrimaryAppend = AttrRefAppend | SubscriptionAppend | CallAppend;
 
-class AttrRefAppend {
+class AttrRefAppend implements IGrammarSymbol {
+    readonly type = 'AttrRefAppend';
     readonly identifier: Identifier;
     constructor(identifier: Identifier) { this.identifier = identifier; }
+    repr() { return { type: this.type, identifier: this.identifier.repr() }; }
     static make(tokens: ITokenSeq): AttrRefAppend {
         popExpectedToken(DotToken, tokens);
         const id = Identifier.make(tokens);
@@ -250,9 +280,11 @@ class AttrRefAppend {
     private _ = undefined;
 }
 
-class SubscriptionAppend {
+class SubscriptionAppend implements IGrammarSymbol {
+    readonly type = 'SubscriptionAppend';
     readonly exprList: ExprList;
     constructor(exprList: ExprList) { this.exprList = exprList; }
+    repr() { return { type: this.type, exprList: this.exprList.repr() }; }
     static make(tokens: ITokenSeq): SubscriptionAppend {
         popExpectedToken(LeftBracketToken, tokens);
         const exprList = ExprList.make(tokens);
@@ -262,9 +294,11 @@ class SubscriptionAppend {
     private _ = undefined;
 }
 
-class CallAppend {
+class CallAppend implements IGrammarSymbol {
+    readonly type = 'CallAppend';
     readonly exprList?: ExprList;
     constructor(exprList?: ExprList) { this.exprList = exprList; }
+    repr() { return { type: this.type, exprList: this.exprList?.repr() }; }
     static make(tokens: ITokenSeq): CallAppend {
         popExpectedToken(LeftParenthesesToken, tokens);
         let exprList = undefined;
@@ -278,9 +312,16 @@ class CallAppend {
 }
 
 /** expr_list ::= expr {"," expr} */
-class ExprList {
+class ExprList implements IGrammarSymbol {
+    readonly type = 'ExprList';
     readonly expressions: Expression[];
     constructor(expressions: Expression[]) { this.expressions = expressions; }
+    repr(): any {
+        return {
+            type: this.type,
+            expressions: this.expressions.map(x => x.repr())
+        };
+    }
     static make(tokens: ITokenSeq): ExprList {
         const expressions = [];
         const first = Expression.make(tokens);
@@ -298,12 +339,20 @@ class ExprList {
 
 //#region 幂运算
 /** power ::= primary ["**" u_expr] */
-class Power {
+class Power implements IGrammarSymbol {
+    readonly type = 'Power';
     readonly primary: Primary;
     readonly uExprs: UExpr[];
     constructor(primary: Primary, uExprs: UExpr[]) {
         this.primary = primary;
         this.uExprs = uExprs;
+    }
+    repr(): any {
+        return {
+            type: this.type,
+            primary: this.primary.repr(),
+            uExprs: this.uExprs.map(x => x.repr())
+        };
     }
     static make(tokens: ITokenSeq): Power {
         const primary = Primary.make(tokens);
@@ -321,7 +370,9 @@ class Power {
 
 //#region 一元算术和一元位运算
 /** u_expr ::= "-" u_expr | "+" u_expr | "~" u_expr | power */
-abstract class UExpr {
+abstract class UExpr implements IGrammarSymbol {
+    get type() { return this.constructor.name; }
+    abstract repr(): any;
     static make(tokens: ITokenSeq): UExpr {
         if (!tokens.hasNext()) {
             throw new PySyntaxError('Tokens goes to end.');
@@ -346,6 +397,13 @@ class UExprWithOp extends UExpr {
         this.operator = operator;
         this.uExpr = uExpr;
     }
+    repr(): any {
+        return {
+            type: this.type,
+            operator: this.operator.repr(),
+            uExpr: this.uExpr.repr()
+        };
+    }
     static make(tokens: ITokenSeq): UExprWithOp {
         if (!tokens.hasNext()) {
             throw new PySyntaxError('Tokens goes to end.');
@@ -367,6 +425,7 @@ class UExprWithOp extends UExpr {
 class UExprPower extends UExpr {
     readonly power: Power;
     constructor(power: Power) { super(); this.power = power; };
+    repr(): any { return { type: this.type, power: this.power.repr() }; }
     static make(tokens: ITokenSeq): UExprPower {
         return new UExprPower(Power.make(tokens));
     }
@@ -383,7 +442,8 @@ class UExprPower extends UExpr {
  * class E extends InfixExpr<Op, T> { }
  * ```
  */
-class InfixExpr<Op extends IToken, T> {
+class InfixExpr<Op extends IToken, T extends IGrammarSymbol>
+    implements IGrammarSymbol {
     /** EBNF 中的 `T` */
     readonly expression: T;
     /** EBNF 中的 `{op T}` */
@@ -402,10 +462,11 @@ class InfixExpr<Op extends IToken, T> {
         this.appends = appends;
     }
 
-    repr() {
+    repr(): any {
         return {
-            expression: this.expression,
-            appends: this.appends
+            type: this.type,
+            expression: this.expression.repr(),
+            appends: this.appends.map(x => x.repr())
         };
     }
 }
@@ -417,10 +478,13 @@ class InfixExpr<Op extends IToken, T> {
  * 使用方法：
  * 
  * ```
- * const eFac = new InfixExprFactory(E, [Op1, Op2], tokens => tFac.make(tokens));
+ * const eFac = new InfixExprFactory(E, [Op1, Op2], T.make);
  * ```
  */
-class InfixExprFactory<E extends InfixExpr<Op, T>, Op extends IToken, T> {
+class InfixExprFactory<
+    E extends InfixExpr<Op, T>,
+    Op extends IToken,
+    T extends IGrammarSymbol> {
     /** `E` 的构造函数 */
     private readonly ECtor: new (expr: T, appends: InfixExprAppend<Op, T>[]) => E;
     /** 所有运算符的构造函数 */
@@ -466,17 +530,20 @@ class InfixExprFactory<E extends InfixExpr<Op, T>, Op extends IToken, T> {
 }
 
 /** 表示一个 `op T` 单元 */
-class InfixExprAppend<Op extends IToken, T>{
+class InfixExprAppend<Op extends IToken, T extends IGrammarSymbol>
+    implements IGrammarSymbol {
+    readonly type = 'InfixExprAppend';
     readonly operator: Op;
     readonly expression: T;
     constructor(operator: Op, expression: T) {
         this.operator = operator;
         this.expression = expression;
     }
-    repr() {
+    repr(): any {
         return {
-            operator: this.operator,
-            expression: this.expression
+            type: this.type,
+            operator: this.operator.repr(),
+            expression: this.expression.repr()
         };
     }
 }
@@ -484,49 +551,39 @@ class InfixExprAppend<Op extends IToken, T>{
 
 //#region 二元算术运算
 /** m_expr ::= u_expr {"*" u_expr | "//" u_expr | "/" u_expr |"%" u_expr} */
-class MExpr extends InfixExpr<
-    MultiplyToken | DivIntToken | DivToken | ModToken,
-    UExpr> { private _ = undefined; }
-const mExprFac = new InfixExprFactory<
-    MExpr,
-    MultiplyToken | DivIntToken | DivToken | ModToken,
-    UExpr>(
-        MExpr,
-        [MultiplyToken, DivIntToken, DivToken, ModToken],
-        tokens => UExpr.make(tokens)
-    );
+type MOperator = MultiplyToken | DivIntToken | DivToken | ModToken;
+class MExpr extends InfixExpr<MOperator, UExpr> { private _ = undefined; }
+const mExprFac = new InfixExprFactory<MExpr, MOperator, UExpr>(
+    MExpr, [MultiplyToken, DivIntToken, DivToken, ModToken], UExpr.make);
 
 /** a_expr ::= m_expr {"+" m_expr | "-" m_expr} */
 class AExpr extends InfixExpr<PlusToken | MinusToken, MExpr> { private _ = undefined; }
 const aExprFac = new InfixExprFactory<AExpr, PlusToken | MinusToken, MExpr>(
-    AExpr, [PlusToken, MinusToken], tokens => mExprFac.make(tokens)
-);
+    AExpr, [PlusToken, MinusToken], tokens => mExprFac.make(tokens));
 //#endregion
 
 //#region 二元位运算
 /** shift_expr ::= a_expr {"<<" a_expr | ">>" a_expr} */
-class ShiftExpr extends InfixExpr<ShiftLeftToken | ShiftRightToken, AExpr> { private _ = undefined; }
+class ShiftExpr extends InfixExpr<ShiftLeftToken | ShiftRightToken, AExpr> {
+    private _ = undefined;
+}
 const shiftExprFac = new InfixExprFactory<ShiftExpr, ShiftLeftToken | ShiftRightToken, AExpr>(
-    ShiftExpr, [ShiftLeftToken, ShiftRightToken], tokens => aExprFac.make(tokens)
-);
+    ShiftExpr, [ShiftLeftToken, ShiftRightToken], tokens => aExprFac.make(tokens));
 
 /** and_expr ::= shift_expr {"&" shift_expr} */
 class AndExpr extends InfixExpr<BitAndToken, ShiftExpr> { private _ = undefined; }
 const andExprFac = new InfixExprFactory(
-    AndExpr, [BitAndToken], tokens => shiftExprFac.make(tokens)
-);
+    AndExpr, [BitAndToken], tokens => shiftExprFac.make(tokens));
 
 /** xor_expr ::= and_expr {"^" and_expr} */
 class XorExpr extends InfixExpr<BitXorToken, AndExpr> { private _ = undefined; }
 const xorExprFac = new InfixExprFactory(
-    XorExpr, [BitXorToken], tokens => andExprFac.make(tokens)
-);
+    XorExpr, [BitXorToken], tokens => andExprFac.make(tokens));
 
 /** or_expr ::= xor_expr {"|" xor_expr} */
 class OrExpr extends InfixExpr<BitOrToken, XorExpr> { private _ = undefined; }
 const orExprFac = new InfixExprFactory(
-    OrExpr, [BitOrToken], tokens => xorExprFac.make(tokens)
-);
+    OrExpr, [BitOrToken], tokens => xorExprFac.make(tokens));
 //#endregion
 
 //#region 比较运算
@@ -538,13 +595,14 @@ class Comparison extends InfixExpr<CompOperator, OrExpr> { private _ = undefined
 const comparisonFac = new InfixExprFactory<Comparison, CompOperator, OrExpr>(
     Comparison,
     [LessToken, LeqToken, GreaterToken, GeqToken, EqualsToken, NotEqualsToken, IsToken],
-    tokens => orExprFac.make(tokens)
-);
+    tokens => orExprFac.make(tokens));
 //#endregion
 
 //#region 布尔运算
 /** not_test ::= "not" not_test | comparison */
-abstract class NotTest {
+abstract class NotTest implements IGrammarSymbol {
+    get type() { return this.constructor.name; }
+    abstract repr(): any;
     static make(tokens: ITokenSeq): NotTest {
         if (!tokens.hasNext()) {
             throw new PySyntaxError('Tokens goes to end.');
@@ -567,6 +625,13 @@ class NotTestWithOp extends NotTest {
         this.operator = operator;
         this.notTest = notTest;
     }
+    repr(): any {
+        return {
+            type: this.type,
+            operator: this.operator.repr(),
+            notTest: this.notTest.repr()
+        };
+    }
     static make(tokens: ITokenSeq): NotTestWithOp {
         const op = popExpectedToken(NotToken, tokens);
         const notTest = NotTest.make(tokens);
@@ -578,6 +643,7 @@ class NotTestWithOp extends NotTest {
 class NotTestComparison extends NotTest {
     readonly comparison: Comparison;
     constructor(comparison: Comparison) { super(); this.comparison = comparison; };
+    repr(): any { return { type: this.type, comparison: this.comparison.repr() }; }
     static make(tokens: ITokenSeq): NotTestComparison {
         return new NotTestComparison(comparisonFac.make(tokens));
     }
@@ -587,19 +653,19 @@ class NotTestComparison extends NotTest {
 /** and_test ::= not_test {"and" not_test} */
 class AndTest extends InfixExpr<AndToken, NotTest> { private _ = undefined; }
 const andTestFac = new InfixExprFactory(
-    AndTest, [AndToken], tokens => NotTest.make(tokens)
-);
+    AndTest, [AndToken], tokens => NotTest.make(tokens));
 
 /** or_test ::= and_test {"or" and_test} */
 class OrTest extends InfixExpr<OrToken, AndTest> { private _ = undefined; }
 const orTestFac = new InfixExprFactory(
-    OrTest, [OrToken], tokens => andTestFac.make(tokens)
-);
+    OrTest, [OrToken], tokens => andTestFac.make(tokens));
 //#endregion
 
-class Expression {
-    orTest: OrTest;
+class Expression implements IGrammarSymbol {
+    readonly type = 'Expression';
+    readonly orTest: OrTest;
     constructor(orTest: OrTest) { this.orTest = orTest; }
+    repr(): any { return { type: this.type, orTest: this.orTest.repr() }; }
     static make(tokens: ITokenSeq): Expression {
         const orTest = orTestFac.make(tokens);
         return new Expression(orTest);
@@ -615,9 +681,11 @@ type SimpleStmt = ExpressionStmt | AssignStmt | PassStmt
     | BreakStmt | ContinueStmt | ReturnStmt | GlobalStmt;
 
 /** expression_stmt ::= expression newline */
-class ExpressionStmt {
+class ExpressionStmt implements IGrammarSymbol {
+    readonly type = 'ExpressionStmt';
     readonly expression: Expression;
     constructor(expression: Expression) { this.expression = expression; }
+    repr(): any { return { type: this.type, expression: this.expression.repr() }; }
     static make(tokens: ITokenSeq): ExpressionStmt {
         const expression = Expression.make(tokens);
         popExpectedToken(NewLineToken, tokens);
@@ -627,12 +695,20 @@ class ExpressionStmt {
 }
 
 /** assign_stmt ::= expression "=" expression newline */
-class AssignStmt {
+class AssignStmt implements IGrammarSymbol {
+    readonly type = 'AssignStmt';
     readonly left: Expression;
     readonly right: Expression;
     constructor(left: Expression, right: Expression) {
         this.left = left;
         this.right = right;
+    }
+    repr(): any {
+        return {
+            type: this.type,
+            left: this.left.repr(),
+            right: this.right.repr()
+        };
     }
     static make(tokens: ITokenSeq): AssignStmt {
         const left = Expression.make(tokens);
@@ -644,40 +720,48 @@ class AssignStmt {
     private _ = undefined;
 }
 
+class KeywordStmt implements IGrammarSymbol {
+    get type() { return this.constructor.name; }
+    repr() { return { type: this.type }; }
+}
+
+function makeKeywordStmt<S extends SimpleStmt, T extends IToken>(
+    Stmt: Constructor<S>, Token: Constructor<T>, tokens: ITokenSeq): S {
+    popExpectedToken(Token, tokens);
+    popExpectedToken(NewLineToken, tokens);
+    return new Stmt();
+}
+
 /** pass_stmt ::= pass newline */
-class PassStmt {
+class PassStmt extends KeywordStmt {
     static make(tokens: ITokenSeq): PassStmt {
-        popExpectedToken(PassToken, tokens);
-        popExpectedToken(NewLineToken, tokens);
-        return new PassStmt();
+        return makeKeywordStmt(PassStmt, PassToken, tokens);
     }
     private _ = undefined;
 }
 
 /** break_stmt ::= "break" newline */
-class BreakStmt {
+class BreakStmt extends KeywordStmt {
     static make(tokens: ITokenSeq): BreakStmt {
-        popExpectedToken(BreakToken, tokens);
-        popExpectedToken(NewLineToken, tokens);
-        return new BreakStmt();
+        return makeKeywordStmt(BreakStmt, BreakToken, tokens);
     }
     private _ = undefined;
 }
 
 /** continue_stmt ::= "continue" newline */
-class ContinueStmt {
+class ContinueStmt extends KeywordStmt {
     static make(tokens: ITokenSeq): ContinueStmt {
-        popExpectedToken(ContinueToken, tokens);
-        popExpectedToken(NewLineToken, tokens);
-        return new ContinueStmt();
+        return makeKeywordStmt(ContinueStmt, ContinueToken, tokens);
     }
     private _ = undefined;
 }
 
 /** return_stmt ::= "return" [expression] newline */
-class ReturnStmt {
+class ReturnStmt implements IGrammarSymbol {
+    readonly type = 'ReturnStmt';
     readonly expression?: Expression;
     constructor(expression?: Expression) { this.expression = expression; }
+    repr(): any { return { type: this.type, expression: this.expression?.repr() }; }
     static make(tokens: ITokenSeq): ReturnStmt {
         popExpectedToken(ReturnToken, tokens);
         let expression = undefined;
@@ -691,9 +775,11 @@ class ReturnStmt {
 }
 
 /** global_stmt ::= "global" identifier_list */
-class GlobalStmt {
+class GlobalStmt implements IGrammarSymbol {
+    readonly type = 'GlobalStmt';
     readonly identifiers: IdentifierList;
     constructor(identifiers: IdentifierList) { this.identifiers = identifiers; }
+    repr() { return { type: this.type, identifiers: this.identifiers.repr() }; }
     static make(tokens: ITokenSeq): GlobalStmt {
         popExpectedToken(GlobalToken, tokens);
         const identifiers = IdentifierList.make(tokens);
@@ -704,9 +790,16 @@ class GlobalStmt {
 }
 
 /** identifier_list ::= identifier {"," identifier} */
-class IdentifierList {
+class IdentifierList implements IGrammarSymbol {
+    readonly type = 'IdentifierList';
     readonly identifiers: Identifier[];
     constructor(identifiers: Identifier[]) { this.identifiers = identifiers; }
+    repr() {
+        return {
+            type: this.type,
+            identifiers: this.identifiers.map(x => x.repr())
+        };
+    }
     static make(tokens: ITokenSeq): IdentifierList {
         const identifiers = [];
         identifiers.push(Identifier.make(tokens));
@@ -724,9 +817,16 @@ class IdentifierList {
 type CompoundStmt = IfStmt | WhileStmt | FuncDef;
 
 /** suite ::= indent_inc statement {statement} indent_dec */
-class Suite {
+class Suite implements IGrammarSymbol {
+    readonly type = 'Suite';
     readonly statements: Statement[];
     constructor(statements: Statement[]) { this.statements = statements; }
+    repr(): any {
+        return {
+            type: this.type,
+            statements: this.statements.map(x => x.repr())
+        };
+    }
     static make(tokens: ITokenSeq): Suite {
         popExpectedToken(IndentIncToken, tokens);
         const statements = [];
@@ -744,7 +844,8 @@ class Suite {
  *             {"elif" expression ":" newline suite}
  *             ["else" ":" newline suite]
  */
-class IfStmt {
+class IfStmt implements IGrammarSymbol {
+    readonly type = 'IfStmt';
     readonly ifBranch: IfBranch;
     readonly elifBranches: ElifBranch[];
     readonly elseBranch?: ElseBranch;
@@ -752,6 +853,14 @@ class IfStmt {
         this.ifBranch = ifBranch;
         this.elifBranches = elifBranches;
         this.elseBranch = elseBranch;
+    }
+    repr() {
+        return {
+            type: this.type,
+            ifBranch: this.ifBranch.repr(),
+            elifBranches: this.elifBranches.map(x => x.repr()),
+            elseBranch: this.elseBranch?.repr()
+        };
     }
     static make(tokens: ITokenSeq): IfStmt {
         const ifBranch = IfBranch.make(tokens);
@@ -768,12 +877,20 @@ class IfStmt {
     private _ = undefined;
 }
 
-class IfBranch {
+class IfBranch implements IGrammarSymbol {
+    readonly type = 'IfBranch';
     readonly condition: Expression;
     readonly suite: Suite;
     constructor(condition: Expression, suite: Suite) {
         this.condition = condition;
         this.suite = suite;
+    }
+    repr() {
+        return {
+            type: this.type,
+            condition: this.condition.repr(),
+            suite: this.suite.repr()
+        };
     }
     static make(tokens: ITokenSeq): IfBranch {
         popExpectedToken(IfToken, tokens);
@@ -786,12 +903,20 @@ class IfBranch {
     private _ = undefined;
 }
 
-class ElifBranch {
+class ElifBranch implements IGrammarSymbol {
+    readonly type = 'ElifBranch';
     readonly condition: Expression;
     readonly suite: Suite;
     constructor(condition: Expression, suite: Suite) {
         this.condition = condition;
         this.suite = suite;
+    }
+    repr() {
+        return {
+            type: this.type,
+            condition: this.condition.repr(),
+            suite: this.suite.repr()
+        };
     }
     static make(tokens: ITokenSeq): ElifBranch {
         popExpectedToken(ElifToken, tokens);
@@ -804,9 +929,11 @@ class ElifBranch {
     private _ = undefined;
 }
 
-class ElseBranch {
+class ElseBranch implements IGrammarSymbol {
+    readonly type = 'ElseBranch';
     readonly suite: Suite;
     constructor(suite: Suite) { this.suite = suite; }
+    repr() { return { type: this.type, suite: this.suite.repr() }; }
     static make(tokens: ITokenSeq): ElseBranch {
         popExpectedToken(ElseToken, tokens);
         popExpectedToken(ColonToken, tokens);
@@ -818,12 +945,20 @@ class ElseBranch {
 }
 
 /** while_stmt ::= "while" expression ":" newline suite */
-class WhileStmt {
+class WhileStmt implements IGrammarSymbol {
+    readonly type = 'WhileStmt';
     readonly condition: Expression;
     readonly suite: Suite;
     constructor(condition: Expression, suite: Suite) {
         this.condition = condition;
         this.suite = suite;
+    }
+    repr() {
+        return {
+            type: this.type,
+            condition: this.condition.repr(),
+            suite: this.suite.repr()
+        };
     }
     static make(tokens: ITokenSeq): WhileStmt {
         popExpectedToken(WhileToken, tokens);
@@ -840,7 +975,8 @@ class WhileStmt {
  * funcdef ::= "def" identifier "(" [parameter_list] ")" ":" newline suite
  * parameter_list ::= identifier_list
  */
-class FuncDef {
+class FuncDef implements IGrammarSymbol {
+    readonly type = 'FuncDef';
     readonly name: Identifier;
     readonly params?: IdentifierList;
     readonly suite: Suite;
@@ -848,6 +984,14 @@ class FuncDef {
         this.name = name;
         this.params = params;
         this.suite = suite;
+    }
+    repr() {
+        return {
+            type: this.type,
+            name: this.name.repr(),
+            params: this.params?.repr(),
+            suite: this.suite.repr()
+        };
     }
     static make(tokens: ITokenSeq): FuncDef {
         popExpectedToken(DefToken, tokens);
@@ -907,9 +1051,11 @@ function makeStatement(tokens: ITokenSeq): Statement {
 //#endregion
 
 /** program ::= {statement} */
-class Program {
+class Program implements IGrammarSymbol {
+    readonly type = 'Program';
     readonly statements: Statement[];
     constructor(statements: Statement[]) { this.statements = statements; }
+    repr() { return { type: this.type, statements: this.statements.map(x => x.repr()) }; }
     static make(tokens: ITokenSeq): Program {
         const statements = [];
         while (tokens.hasNext()) {
