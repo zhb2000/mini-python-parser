@@ -1,6 +1,12 @@
-import { CharSequence, makeCharSequences } from '../scanner/preprocessor';
-function printCharSequences(seqs: CharSequence[]) {
-    const sb = seqs.map(s => s.data.toString());
-    return sb.join(' ');
+import { CharSequence } from '../scanner/preprocessor';
+function printCharSequences(sequences: CharSequence[]) {
+    const sj = sequences.map(s => s.data.toString());
+    return sj.join(' ');
 }
-export { printCharSequences };
+
+function jsonString(obj: any): string {
+    return JSON.stringify(obj, (key, value) =>
+        typeof value === "bigint" ? value.toString() : value);
+}
+
+export { printCharSequences, jsonString };

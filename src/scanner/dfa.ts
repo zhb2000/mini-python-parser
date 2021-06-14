@@ -3,7 +3,7 @@ import { asNonNull, Optional } from '../utils/enhance';
 import { itertools, map, range } from '../utils/pylike';
 import { IndentInc, IndentDec, NewLine, PyChar } from './preprocessor';
 
-/** key 为 PyChar 的 Map */
+/** 键为 PyChar 的 Map */
 class PyCharMap<V> {
     private strMap: Map<string, V> = new Map();
     private indentIncValue: Optional<V> = undefined;
@@ -75,6 +75,7 @@ interface INode {
     to(ch: PyChar): Optional<INode>;
 }
 
+/** 词法分析所用的 DFA */
 class Automaton {
     /** 状态名称 -> 状态节点 */
     private readonly nodes = new Map<string, INode>();
@@ -98,9 +99,10 @@ class Automaton {
     /** 让 cursor 返回初始状态 */
     reset() { this.cursor = asNonNull(this.nodes.get('1')); }
 
+    /** 填充 nodes 字典 */
     private initNodes() {
         const that = this;
-        //1
+        //1（初态）
         this.addNode('1', false,
             new PyCharMap<string>()
                 .setLetterValue('id2')
@@ -229,6 +231,13 @@ class Automaton {
         }
     }
 
+    /**
+     * 向 nodes 中添加状态节点
+     * 
+     * @param name 节点名称
+     * @param acceptable 是否为终态
+     * @param char2NodeName 状态转移表
+     */
     private addNode(name: string, acceptable: boolean,
         char2NodeName: PyCharMap<string>) {
         const that = this;

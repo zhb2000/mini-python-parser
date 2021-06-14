@@ -1,3 +1,4 @@
+/** 仿 Python 的各种实用函数 */
 import { throwErr } from './enhance';
 import * as itertools from './pylike-itertools';
 

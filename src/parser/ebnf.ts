@@ -1,113 +1,9 @@
-import { asNonNull, assert, Constructor, Optional } from '../utils/enhance';
+import { asNonNull, Constructor, Optional } from '../utils/enhance';
 import { PySyntaxError } from '../scanner/errors';
-import {
-    IToken,
-    BitAndToken,
-    DivIntToken,
-    DivToken,
-    MinusToken,
-    ModToken,
-    MultiplyToken,
-    PlusToken,
-    ShiftLeftToken,
-    ShiftRightToken,
-    BitOrToken,
-    BitXorToken,
-    LessToken,
-    LeqToken,
-    GreaterToken,
-    GeqToken,
-    EqualsToken,
-    NotEqualsToken,
-    IsToken,
-    AndToken,
-    OrToken,
-    IdentifierToken,
-    StringToken,
-    IntToken,
-    FloatToken,
-    LeftParenthesesToken,
-    RightParenthesesToken,
-    DotToken,
-    LeftBracketToken,
-    RightBracketToken,
-    CommaToken,
-    PowToken,
-    BitNotToken,
-    NotToken,
-    NewLineToken,
-    PassToken,
-    BreakToken,
-    ContinueToken,
-    GlobalToken,
-    ReturnToken,
-    AssignToken,
-    IndentIncToken,
-    IndentDecToken,
-    WhileToken,
-    IfToken,
-    ElifToken,
-    ElseToken,
-    DefToken,
-    ColonToken,
-    TrueToken,
-    FalseToken,
-    NoneToken,
-} from '../scanner/token';
-import {
-    IASTNode,
-    AddNode,
-    MinusNode,
-    MultiplyNode,
-    DivNode,
-    DivIntNode,
-    ModNode,
-    PowNode,
-    ShiftLeftNode,
-    ShiftRightNode,
-    BitAndNode,
-    BitOrNode,
-    BitXorNode,
-    AndNode,
-    OrNode,
-    LessNode,
-    LeqNode,
-    GreaterNode,
-    GeqNode,
-    EqualsNode,
-    NotEqualsNode,
-    IsNode,
-    AssignNode,
-    BitNotNode,
-    NotNode,
-    PosNode,
-    NegNode,
-    TrueNode,
-    FalseNode,
-    NoneNode,
-    PassNode,
-    BreakNode,
-    ContinueNode,
-    IdentifierNode,
-    StrNode,
-    IntNode,
-    FloatNode,
-    ArgsNode,
-    AttrRefNode,
-    SubscriptionNode,
-    CallNode,
-    ReturnNode,
-    GlobalNode,
-    IfBranchNode,
-    SuiteNode,
-    ElifBranchNode,
-    ElseBranchNode,
-    IfElifElseNode,
-    WhileNode,
-    FuncDefNode,
-    ParamsNode,
-    ProgramNode
-} from './ast';
+import { IToken } from '../scanner/token';
+import { IASTNode } from './ast';
+import * as tk from '../scanner/token';
+import * as ast from './ast';
 
 /** 文法符号 */
 interface IGrammarSymbol {
@@ -165,9 +61,9 @@ class Identifier implements IGrammarSymbol {
     readonly name: string;
     constructor(name: string) { this.name = name; }
     repr() { return { type: this.type, name: this.name }; }
-    toASTNode() { return new IdentifierNode(this.name); }
+    toASTNode() { return new ast.IdentifierNode(this.name); }
     static make(tokens: ITokenSeq): Identifier {
-        const id = popExpectedToken(IdentifierToken, tokens);
+        const id = popExpectedToken(tk.IdentifierToken, tokens);
         return new Identifier(id.value);
     }
 }
@@ -185,23 +81,23 @@ function makeKeywordLiteral<L extends KeywordLiteral, T extends IToken>(
 }
 
 class TrueLiteral extends KeywordLiteral {
-    toASTNode() { return new TrueNode(); }
+    toASTNode() { return new ast.TrueNode(); }
     static make(tokens: ITokenSeq): TrueLiteral {
-        return makeKeywordLiteral(TrueLiteral, TrueToken, tokens);
+        return makeKeywordLiteral(TrueLiteral, tk.TrueToken, tokens);
     }
 }
 
 class FalseLiteral extends KeywordLiteral {
-    toASTNode() { return new FalseNode(); }
+    toASTNode() { return new ast.FalseNode(); }
     static make(tokens: ITokenSeq): FalseLiteral {
-        return makeKeywordLiteral(FalseLiteral, FalseToken, tokens);
+        return makeKeywordLiteral(FalseLiteral, tk.FalseToken, tokens);
     }
 }
 
 class NoneLiteral extends KeywordLiteral {
-    toASTNode() { return new NoneNode(); }
+    toASTNode() { return new ast.NoneNode(); }
     static make(tokens: ITokenSeq): NoneLiteral {
-        return makeKeywordLiteral(NoneLiteral, NoneToken, tokens);
+        return makeKeywordLiteral(NoneLiteral, tk.NoneToken, tokens);
     }
 }
 
@@ -210,9 +106,9 @@ class StrLiteral implements IGrammarSymbol {
     readonly value: string;
     constructor(value: string) { this.value = value; }
     repr() { return { type: this.type, value: this.value }; }
-    toASTNode() { return new StrNode(this.value); }
+    toASTNode() { return new ast.StrNode(this.value); }
     static make(tokens: ITokenSeq): StrLiteral {
-        const str = popExpectedToken(StringToken, tokens);
+        const str = popExpectedToken(tk.StringToken, tokens);
         return new StrLiteral(str.getString());
     }
 }
@@ -222,9 +118,9 @@ class IntLiteral implements IGrammarSymbol {
     readonly value: bigint;
     constructor(value: bigint) { this.value = value; }
     repr() { return { type: this.type, value: this.value }; }
-    toASTNode() { return new IntNode(this.value); }
+    toASTNode() { return new ast.IntNode(this.value); }
     static make(tokens: ITokenSeq): IntLiteral {
-        const integer = popExpectedToken(IntToken, tokens);
+        const integer = popExpectedToken(tk.IntToken, tokens);
         return new IntLiteral(integer.getInt());
     }
 }
@@ -234,9 +130,9 @@ class FloatLiteral implements IGrammarSymbol {
     readonly value: number;
     constructor(value: number) { this.value = value; }
     repr() { return { type: this.type, value: this.value }; }
-    toASTNode() { return new FloatNode(this.value); }
+    toASTNode() { return new ast.FloatNode(this.value); }
     static make(tokens: ITokenSeq): FloatLiteral {
-        const float = popExpectedToken(FloatToken, tokens);
+        const float = popExpectedToken(tk.FloatToken, tokens);
         return new FloatLiteral(float.getFloat());
     }
 }
@@ -248,22 +144,22 @@ class ParenthesesExpr implements IGrammarSymbol {
     repr(): any { return { type: this.type, expression: this.expression.repr() }; }
     toASTNode(): IASTNode { return this.expression.toASTNode(); }
     static make(tokens: ITokenSeq): ParenthesesExpr {
-        popExpectedToken(LeftParenthesesToken, tokens);
+        popExpectedToken(tk.LeftParenthesesToken, tokens);
         const expression = Expression.make(tokens);
-        popExpectedToken(RightParenthesesToken, tokens);
+        popExpectedToken(tk.RightParenthesesToken, tokens);
         return new ParenthesesExpr(expression);
     }
 }
 
 const token2AtomFac = new Map<Constructor<IToken>, (tokens: ITokenSeq) => Atom>([
-    [IdentifierToken, Identifier.make],
-    [StringToken, StrLiteral.make],
-    [IntToken, IntLiteral.make],
-    [FloatToken, FloatLiteral.make],
-    [TrueToken, TrueLiteral.make],
-    [FalseToken, FalseLiteral.make],
-    [NoneToken, NoneLiteral.make],
-    [LeftParenthesesToken, ParenthesesExpr.make],
+    [tk.IdentifierToken, Identifier.make],
+    [tk.StringToken, StrLiteral.make],
+    [tk.IntToken, IntLiteral.make],
+    [tk.FloatToken, FloatLiteral.make],
+    [tk.TrueToken, TrueLiteral.make],
+    [tk.FalseToken, FalseLiteral.make],
+    [tk.NoneToken, NoneLiteral.make],
+    [tk.LeftParenthesesToken, ParenthesesExpr.make],
 ]);
 
 function makeAtom(tokens: ITokenSeq): Atom {
@@ -308,29 +204,29 @@ class Primary implements IGrammarSymbol {
         for (const app of this.appends) {
             if (app instanceof AttrRefAppend) {
                 const attr = app.identifier.toASTNode();
-                lch = new AttrRefNode(lch, attr);
+                lch = new ast.AttrRefNode(lch, attr);
             } else if (app instanceof SubscriptionAppend) {
                 const args = app.exprList.toASTNode();
-                lch = new SubscriptionNode(lch, args);
+                lch = new ast.SubscriptionNode(lch, args);
             } else {
-                const args = app.exprList?.toASTNode() ?? new ArgsNode([]);
-                lch = new CallNode(lch, args);
+                const args = app.exprList?.toASTNode() ?? new ast.ArgsNode([]);
+                lch = new ast.CallNode(lch, args);
             }
         }
         return lch;
     }
     static make(tokens: ITokenSeq): Primary {
         const isExpected = (token: IToken) =>
-            token instanceof DotToken ||
-            token instanceof LeftBracketToken ||
-            token instanceof LeftParenthesesToken;
+            token instanceof tk.DotToken ||
+            token instanceof tk.LeftBracketToken ||
+            token instanceof tk.LeftParenthesesToken;
         const atom = makeAtom(tokens);
         const appends = [];
         while (tokens.hasNext() && isExpected(tokens.viewNext())) {
             const token = tokens.viewNext();
-            if (token instanceof DotToken) {
+            if (token instanceof tk.DotToken) {
                 appends.push(AttrRefAppend.make(tokens));
-            } else if (token instanceof LeftBracketToken) {
+            } else if (token instanceof tk.LeftBracketToken) {
                 appends.push(SubscriptionAppend.make(tokens));
             } else { // token instance of LeftParentheses
                 appends.push(CallAppend.make(tokens));
@@ -349,7 +245,7 @@ class AttrRefAppend implements IGrammarSymbol {
     repr() { return { type: this.type, identifier: this.identifier.repr() }; }
     toASTNode(): never { throw new Error('Method not implemented.'); }
     static make(tokens: ITokenSeq): AttrRefAppend {
-        popExpectedToken(DotToken, tokens);
+        popExpectedToken(tk.DotToken, tokens);
         const id = Identifier.make(tokens);
         return new AttrRefAppend(id);
     }
@@ -362,9 +258,9 @@ class SubscriptionAppend implements IGrammarSymbol {
     repr() { return { type: this.type, exprList: this.exprList.repr() }; }
     toASTNode(): never { throw new Error('Method not implemented.'); }
     static make(tokens: ITokenSeq): SubscriptionAppend {
-        popExpectedToken(LeftBracketToken, tokens);
+        popExpectedToken(tk.LeftBracketToken, tokens);
         const exprList = ExprList.make(tokens);
-        popExpectedToken(RightBracketToken, tokens);
+        popExpectedToken(tk.RightBracketToken, tokens);
         return new SubscriptionAppend(exprList);
     }
 }
@@ -376,12 +272,12 @@ class CallAppend implements IGrammarSymbol {
     repr() { return { type: this.type, exprList: this.exprList?.repr() }; }
     toASTNode(): never { throw new Error('Method not implemented.'); }
     static make(tokens: ITokenSeq): CallAppend {
-        popExpectedToken(LeftParenthesesToken, tokens);
+        popExpectedToken(tk.LeftParenthesesToken, tokens);
         let exprList = undefined;
-        if (!(tokens.viewNext() instanceof RightParenthesesToken)) {
+        if (!(tokens.viewNext() instanceof tk.RightParenthesesToken)) {
             exprList = ExprList.make(tokens);
         }
-        popExpectedToken(RightParenthesesToken, tokens);
+        popExpectedToken(tk.RightParenthesesToken, tokens);
         return new CallAppend(exprList);
     }
 }
@@ -397,13 +293,13 @@ class ExprList implements IGrammarSymbol {
             expressions: this.expressions.map(x => x.repr())
         };
     }
-    toASTNode() { return new ArgsNode(this.expressions.map(e => e.toASTNode())); }
+    toASTNode() { return new ast.ArgsNode(this.expressions.map(e => e.toASTNode())); }
     static make(tokens: ITokenSeq): ExprList {
         const expressions = [];
         const first = Expression.make(tokens);
         expressions.push(first);
-        while (tokens.hasNext() && tokens.viewNext() instanceof CommaToken) {
-            popExpectedToken(CommaToken, tokens);
+        while (tokens.hasNext() && tokens.viewNext() instanceof tk.CommaToken) {
+            popExpectedToken(tk.CommaToken, tokens);
             const e = Expression.make(tokens);
             expressions.push(e);
         }
@@ -437,15 +333,15 @@ class Power implements IGrammarSymbol {
         let rch = arr[arr.length - 1];
         for (let i = arr.length - 2; i >= 0; i--) {
             const lch = arr[i];
-            rch = new PowNode(lch, rch);
+            rch = new ast.PowNode(lch, rch);
         }
         return rch;
     }
     static make(tokens: ITokenSeq): Power {
         const primary = Primary.make(tokens);
         const uExprs = [];
-        while (tokens.hasNext() && tokens.viewNext() instanceof PowToken) {
-            popExpectedToken(PowToken, tokens);
+        while (tokens.hasNext() && tokens.viewNext() instanceof tk.PowToken) {
+            popExpectedToken(tk.PowToken, tokens);
             const uExpr = UExpr.make(tokens);
             uExprs.push(uExpr);
         }
@@ -465,9 +361,9 @@ abstract class UExpr implements IGrammarSymbol {
             throw new PySyntaxError('Tokens goes to end.');
         }
         const token = tokens.viewNext();
-        if (token instanceof MinusToken
-            || token instanceof PlusToken
-            || token instanceof BitNotToken) {
+        if (token instanceof tk.MinusToken ||
+            token instanceof tk.PlusToken ||
+            token instanceof tk.BitNotToken) {
             return UExprWithOp.make(tokens);
         } else {
             return UExprPower.make(tokens);
@@ -476,9 +372,9 @@ abstract class UExpr implements IGrammarSymbol {
 }
 
 class UExprWithOp extends UExpr {
-    readonly operator: MinusToken | PlusToken | BitNotToken;
+    readonly operator: tk.MinusToken | tk.PlusToken | tk.BitNotToken;
     readonly uExpr: UExpr;
-    constructor(operator: MinusToken | PlusToken | BitNotToken, uExpr: UExpr) {
+    constructor(operator: tk.MinusToken | tk.PlusToken | tk.BitNotToken, uExpr: UExpr) {
         super();
         this.operator = operator;
         this.uExpr = uExpr;
@@ -491,12 +387,12 @@ class UExprWithOp extends UExpr {
         };
     }
     toASTNode() {
-        if (this.operator instanceof MinusToken) {
-            return new NegNode(this.uExpr.toASTNode());
-        } else if (this.operator instanceof PlusToken) {
-            return new PosNode(this.uExpr.toASTNode());
+        if (this.operator instanceof tk.MinusToken) {
+            return new ast.NegNode(this.uExpr.toASTNode());
+        } else if (this.operator instanceof tk.PlusToken) {
+            return new ast.PosNode(this.uExpr.toASTNode());
         } else {
-            return new BitNotNode(this.uExpr.toASTNode());
+            return new ast.BitNotNode(this.uExpr.toASTNode());
         }
     }
     static make(tokens: ITokenSeq): UExprWithOp {
@@ -504,10 +400,10 @@ class UExprWithOp extends UExpr {
             throw new PySyntaxError('Tokens goes to end.');
         }
         const op = tokens.viewNext();
-        if (op instanceof MinusToken
-            || op instanceof PlusToken
-            || op instanceof BitNotToken) {
-            const op = tokens.goNext() as (MinusToken | PlusToken | BitNotToken);
+        if (op instanceof tk.MinusToken ||
+            op instanceof tk.PlusToken ||
+            op instanceof tk.BitNotToken) {
+            const op = tokens.goNext() as (tk.MinusToken | tk.PlusToken | tk.BitNotToken);
             const uExpr = UExpr.make(tokens);
             return new UExprWithOp(op, uExpr);
         } else {
@@ -532,26 +428,26 @@ class UExprPower extends UExpr {
 const opStr2BinaryNode = new Map<
     string, new (lch: IASTNode, rch: IASTNode) => IASTNode
 >([
-    ['+', AddNode],
-    ['-', MinusNode],
-    ['*', MultiplyNode],
-    ['/', DivNode],
-    ['//', DivIntNode],
-    ['%', ModNode],
-    ['<<', ShiftLeftNode],
-    ['>>', ShiftRightNode],
-    ['&', BitAndNode],
-    ['^', BitXorNode],
-    ['|', BitOrNode],
-    ['<', LessNode],
-    ['<=', LeqNode],
-    ['>', GreaterNode],
-    ['>=', GeqNode],
-    ['==', EqualsNode],
-    ['!=', NotEqualsNode],
-    ['is', IsNode],
-    ['and', AndNode],
-    ['or', OrNode],
+    ['+', ast.AddNode],
+    ['-', ast.MinusNode],
+    ['*', ast.MultiplyNode],
+    ['/', ast.DivNode],
+    ['//', ast.DivIntNode],
+    ['%', ast.ModNode],
+    ['<<', ast.ShiftLeftNode],
+    ['>>', ast.ShiftRightNode],
+    ['&', ast.BitAndNode],
+    ['^', ast.BitXorNode],
+    ['|', ast.BitOrNode],
+    ['<', ast.LessNode],
+    ['<=', ast.LeqNode],
+    ['>', ast.GreaterNode],
+    ['>=', ast.GeqNode],
+    ['==', ast.EqualsNode],
+    ['!=', ast.NotEqualsNode],
+    ['is', ast.IsNode],
+    ['and', ast.AndNode],
+    ['or', ast.OrNode],
 ]);
 
 /**
@@ -682,50 +578,50 @@ class InfixExprAppend<Op extends IToken, T extends IGrammarSymbol>
 
 //#region 二元算术运算
 /** m_expr ::= u_expr {"*" u_expr | "//" u_expr | "/" u_expr |"%" u_expr} */
-type MOperator = MultiplyToken | DivIntToken | DivToken | ModToken;
+type MOperator = tk.MultiplyToken | tk.DivIntToken | tk.DivToken | tk.ModToken;
 class MExpr extends InfixExpr<MOperator, UExpr> { private _ = undefined; }
 const mExprFac = new InfixExprFactory<MExpr, MOperator, UExpr>(
-    MExpr, [MultiplyToken, DivIntToken, DivToken, ModToken], UExpr.make);
+    MExpr, [tk.MultiplyToken, tk.DivIntToken, tk.DivToken, tk.ModToken], UExpr.make);
 
 /** a_expr ::= m_expr {"+" m_expr | "-" m_expr} */
-class AExpr extends InfixExpr<PlusToken | MinusToken, MExpr> { private _ = undefined; }
-const aExprFac = new InfixExprFactory<AExpr, PlusToken | MinusToken, MExpr>(
-    AExpr, [PlusToken, MinusToken], tokens => mExprFac.make(tokens));
+class AExpr extends InfixExpr<tk.PlusToken | tk.MinusToken, MExpr> { private _ = undefined; }
+const aExprFac = new InfixExprFactory<AExpr, tk.PlusToken | tk.MinusToken, MExpr>(
+    AExpr, [tk.PlusToken, tk.MinusToken], tokens => mExprFac.make(tokens));
 //#endregion
 
 //#region 二元位运算
 /** shift_expr ::= a_expr {"<<" a_expr | ">>" a_expr} */
-class ShiftExpr extends InfixExpr<ShiftLeftToken | ShiftRightToken, AExpr> {
+class ShiftExpr extends InfixExpr<tk.ShiftLeftToken | tk.ShiftRightToken, AExpr> {
     private _ = undefined;
 }
-const shiftExprFac = new InfixExprFactory<ShiftExpr, ShiftLeftToken | ShiftRightToken, AExpr>(
-    ShiftExpr, [ShiftLeftToken, ShiftRightToken], tokens => aExprFac.make(tokens));
+const shiftExprFac = new InfixExprFactory<ShiftExpr, tk.ShiftLeftToken | tk.ShiftRightToken, AExpr>(
+    ShiftExpr, [tk.ShiftLeftToken, tk.ShiftRightToken], tokens => aExprFac.make(tokens));
 
 /** and_expr ::= shift_expr {"&" shift_expr} */
-class AndExpr extends InfixExpr<BitAndToken, ShiftExpr> { private _ = undefined; }
+class AndExpr extends InfixExpr<tk.BitAndToken, ShiftExpr> { private _ = undefined; }
 const andExprFac = new InfixExprFactory(
-    AndExpr, [BitAndToken], tokens => shiftExprFac.make(tokens));
+    AndExpr, [tk.BitAndToken], tokens => shiftExprFac.make(tokens));
 
 /** xor_expr ::= and_expr {"^" and_expr} */
-class XorExpr extends InfixExpr<BitXorToken, AndExpr> { private _ = undefined; }
+class XorExpr extends InfixExpr<tk.BitXorToken, AndExpr> { private _ = undefined; }
 const xorExprFac = new InfixExprFactory(
-    XorExpr, [BitXorToken], tokens => andExprFac.make(tokens));
+    XorExpr, [tk.BitXorToken], tokens => andExprFac.make(tokens));
 
 /** or_expr ::= xor_expr {"|" xor_expr} */
-class OrExpr extends InfixExpr<BitOrToken, XorExpr> { private _ = undefined; }
+class OrExpr extends InfixExpr<tk.BitOrToken, XorExpr> { private _ = undefined; }
 const orExprFac = new InfixExprFactory(
-    OrExpr, [BitOrToken], tokens => xorExprFac.make(tokens));
+    OrExpr, [tk.BitOrToken], tokens => xorExprFac.make(tokens));
 //#endregion
 
 //#region 比较运算
 /** comp_operator ::= "<" | ">" | "==" | ">=" | "<=" | "!=" | "is" */
-type CompOperator = LessToken | LeqToken | GreaterToken | GeqToken
-    | EqualsToken | NotEqualsToken | IsToken;
+type CompOperator = tk.LessToken | tk.LeqToken | tk.GreaterToken | tk.GeqToken
+    | tk.EqualsToken | tk.NotEqualsToken | tk.IsToken;
 /** comparison ::= or_expr {comp_operator or_expr} */
 class Comparison extends InfixExpr<CompOperator, OrExpr> { private _ = undefined; }
 const comparisonFac = new InfixExprFactory<Comparison, CompOperator, OrExpr>(
     Comparison,
-    [LessToken, LeqToken, GreaterToken, GeqToken, EqualsToken, NotEqualsToken, IsToken],
+    [tk.LessToken, tk.LeqToken, tk.GreaterToken, tk.GeqToken, tk.EqualsToken, tk.NotEqualsToken, tk.IsToken],
     tokens => orExprFac.make(tokens));
 //#endregion
 
@@ -740,7 +636,7 @@ abstract class NotTest implements IGrammarSymbol {
             throw new PySyntaxError('Tokens goes to end.');
         }
         const token = tokens.viewNext();
-        if (token instanceof NotToken) {
+        if (token instanceof tk.NotToken) {
             return NotTestWithOp.make(tokens);
         } else {
             return NotTestComparison.make(tokens);
@@ -749,9 +645,9 @@ abstract class NotTest implements IGrammarSymbol {
 }
 
 class NotTestWithOp extends NotTest {
-    readonly operator: NotToken;
+    readonly operator: tk.NotToken;
     readonly notTest: NotTest;
-    constructor(operator: NotToken, notTest: NotTest) {
+    constructor(operator: tk.NotToken, notTest: NotTest) {
         super();
         this.operator = operator;
         this.notTest = notTest;
@@ -763,9 +659,9 @@ class NotTestWithOp extends NotTest {
             notTest: this.notTest.repr()
         };
     }
-    toASTNode() { return new NotNode(this.notTest.toASTNode()); }
+    toASTNode() { return new ast.NotNode(this.notTest.toASTNode()); }
     static make(tokens: ITokenSeq): NotTestWithOp {
-        const op = popExpectedToken(NotToken, tokens);
+        const op = popExpectedToken(tk.NotToken, tokens);
         const notTest = NotTest.make(tokens);
         return new NotTestWithOp(op, notTest);
     }
@@ -782,14 +678,14 @@ class NotTestComparison extends NotTest {
 }
 
 /** and_test ::= not_test {"and" not_test} */
-class AndTest extends InfixExpr<AndToken, NotTest> { private _ = undefined; }
+class AndTest extends InfixExpr<tk.AndToken, NotTest> { private _ = undefined; }
 const andTestFac = new InfixExprFactory(
-    AndTest, [AndToken], tokens => NotTest.make(tokens));
+    AndTest, [tk.AndToken], tokens => NotTest.make(tokens));
 
 /** or_test ::= and_test {"or" and_test} */
-class OrTest extends InfixExpr<OrToken, AndTest> { private _ = undefined; }
+class OrTest extends InfixExpr<tk.OrToken, AndTest> { private _ = undefined; }
 const orTestFac = new InfixExprFactory(
-    OrTest, [OrToken], tokens => andTestFac.make(tokens));
+    OrTest, [tk.OrToken], tokens => andTestFac.make(tokens));
 //#endregion
 
 class Expression implements IGrammarSymbol {
@@ -820,7 +716,7 @@ class ExpressionStmt implements IGrammarSymbol {
     toASTNode(): IASTNode { return this.expression.toASTNode(); }
     static make(tokens: ITokenSeq): ExpressionStmt {
         const expression = Expression.make(tokens);
-        popExpectedToken(NewLineToken, tokens);
+        popExpectedToken(tk.NewLineToken, tokens);
         return new ExpressionStmt(expression);
     }
 }
@@ -841,12 +737,12 @@ class AssignStmt implements IGrammarSymbol {
             right: this.right.repr()
         };
     }
-    toASTNode() { return new AssignNode(this.left.toASTNode(), this.right.toASTNode()); }
+    toASTNode() { return new ast.AssignNode(this.left.toASTNode(), this.right.toASTNode()); }
     static make(tokens: ITokenSeq): AssignStmt {
         const left = Expression.make(tokens);
-        popExpectedToken(AssignToken, tokens);
+        popExpectedToken(tk.AssignToken, tokens);
         const right = Expression.make(tokens);
-        popExpectedToken(NewLineToken, tokens);
+        popExpectedToken(tk.NewLineToken, tokens);
         return new AssignStmt(left, right);
     }
 }
@@ -860,31 +756,31 @@ abstract class KeywordStmt implements IGrammarSymbol {
 function makeKeywordStmt<S extends SimpleStmt, T extends IToken>(
     Stmt: Constructor<S>, Token: Constructor<T>, tokens: ITokenSeq): S {
     popExpectedToken(Token, tokens);
-    popExpectedToken(NewLineToken, tokens);
+    popExpectedToken(tk.NewLineToken, tokens);
     return new Stmt();
 }
 
 /** pass_stmt ::= pass newline */
 class PassStmt extends KeywordStmt {
-    toASTNode() { return new PassNode(); }
+    toASTNode() { return new ast.PassNode(); }
     static make(tokens: ITokenSeq): PassStmt {
-        return makeKeywordStmt(PassStmt, PassToken, tokens);
+        return makeKeywordStmt(PassStmt, tk.PassToken, tokens);
     }
 }
 
 /** break_stmt ::= "break" newline */
 class BreakStmt extends KeywordStmt {
-    toASTNode() { return new BreakNode(); }
+    toASTNode() { return new ast.BreakNode(); }
     static make(tokens: ITokenSeq): BreakStmt {
-        return makeKeywordStmt(BreakStmt, BreakToken, tokens);
+        return makeKeywordStmt(BreakStmt, tk.BreakToken, tokens);
     }
 }
 
 /** continue_stmt ::= "continue" newline */
 class ContinueStmt extends KeywordStmt {
-    toASTNode() { return new ContinueNode(); }
+    toASTNode() { return new ast.ContinueNode(); }
     static make(tokens: ITokenSeq): ContinueStmt {
-        return makeKeywordStmt(ContinueStmt, ContinueToken, tokens);
+        return makeKeywordStmt(ContinueStmt, tk.ContinueToken, tokens);
     }
 }
 
@@ -894,14 +790,14 @@ class ReturnStmt implements IGrammarSymbol {
     readonly expression?: Expression;
     constructor(expression?: Expression) { this.expression = expression; }
     repr(): any { return { type: this.type, expression: this.expression?.repr() }; }
-    toASTNode() { return new ReturnNode(this.expression?.toASTNode()); }
+    toASTNode() { return new ast.ReturnNode(this.expression?.toASTNode()); }
     static make(tokens: ITokenSeq): ReturnStmt {
-        popExpectedToken(ReturnToken, tokens);
+        popExpectedToken(tk.ReturnToken, tokens);
         let expression = undefined;
-        if (!(tokens.viewNext() instanceof NewLineToken)) {
+        if (!(tokens.viewNext() instanceof tk.NewLineToken)) {
             expression = Expression.make(tokens);
         }
-        popExpectedToken(NewLineToken, tokens);
+        popExpectedToken(tk.NewLineToken, tokens);
         return new ReturnStmt(expression);
     }
 }
@@ -913,13 +809,13 @@ class GlobalStmt implements IGrammarSymbol {
     constructor(identifiers: IdentifierList) { this.identifiers = identifiers; }
     repr() { return { type: this.type, identifiers: this.identifiers.repr() }; }
     toASTNode() {
-        return new GlobalNode(
+        return new ast.GlobalNode(
             this.identifiers.identifiers.map(id => id.toASTNode()));
     }
     static make(tokens: ITokenSeq): GlobalStmt {
-        popExpectedToken(GlobalToken, tokens);
+        popExpectedToken(tk.GlobalToken, tokens);
         const identifiers = IdentifierList.make(tokens);
-        popExpectedToken(NewLineToken, tokens);
+        popExpectedToken(tk.NewLineToken, tokens);
         return new GlobalStmt(identifiers);
     }
 }
@@ -939,8 +835,8 @@ class IdentifierList implements IGrammarSymbol {
     static make(tokens: ITokenSeq): IdentifierList {
         const identifiers = [];
         identifiers.push(Identifier.make(tokens));
-        while (tokens.hasNext() && tokens.viewNext() instanceof CommaToken) {
-            popExpectedToken(CommaToken, tokens);
+        while (tokens.hasNext() && tokens.viewNext() instanceof tk.CommaToken) {
+            popExpectedToken(tk.CommaToken, tokens);
             identifiers.push(Identifier.make(tokens));
         }
         return new IdentifierList(identifiers);
@@ -962,14 +858,14 @@ class Suite implements IGrammarSymbol {
             statements: this.statements.map(x => x.repr())
         };
     }
-    toASTNode(): SuiteNode { return new SuiteNode(this.statements.map(x => x.toASTNode())); }
+    toASTNode(): ast.SuiteNode { return new ast.SuiteNode(this.statements.map(x => x.toASTNode())); }
     static make(tokens: ITokenSeq): Suite {
-        popExpectedToken(IndentIncToken, tokens);
+        popExpectedToken(tk.IndentIncToken, tokens);
         const statements = [];
-        while (tokens.hasNext() && !(tokens.viewNext() instanceof IndentDecToken)) {
+        while (tokens.hasNext() && !(tokens.viewNext() instanceof tk.IndentDecToken)) {
             statements.push(makeStatement(tokens));
         }
-        popExpectedToken(IndentDecToken, tokens);
+        popExpectedToken(tk.IndentDecToken, tokens);
         return new Suite(statements);
     }
 }
@@ -1001,7 +897,7 @@ class IfStmt implements IGrammarSymbol {
         };
     }
     toASTNode() {
-        return new IfElifElseNode(
+        return new ast.IfElifElseNode(
             this.ifBranch.toASTNode(),
             this.elifBranches.map(x => x.toASTNode()),
             this.elseBranch?.toASTNode());
@@ -1009,11 +905,11 @@ class IfStmt implements IGrammarSymbol {
     static make(tokens: ITokenSeq): IfStmt {
         const ifBranch = IfBranch.make(tokens);
         const elifBranches = [];
-        while (tokens.hasNext() && tokens.viewNext() instanceof ElifToken) {
+        while (tokens.hasNext() && tokens.viewNext() instanceof tk.ElifToken) {
             elifBranches.push(ElifBranch.make(tokens));
         }
         let elseBranch = undefined;
-        if (tokens.hasNext() && tokens.viewNext() instanceof ElseToken) {
+        if (tokens.hasNext() && tokens.viewNext() instanceof tk.ElseToken) {
             elseBranch = ElseBranch.make(tokens);
         }
         return new IfStmt(ifBranch, elifBranches, elseBranch);
@@ -1036,14 +932,14 @@ class IfBranch implements IGrammarSymbol {
         };
     }
     toASTNode() {
-        return new IfBranchNode(
+        return new ast.IfBranchNode(
             this.condition.toASTNode(), this.suite.toASTNode());
     }
     static make(tokens: ITokenSeq): IfBranch {
-        popExpectedToken(IfToken, tokens);
+        popExpectedToken(tk.IfToken, tokens);
         const cond = Expression.make(tokens);
-        popExpectedToken(ColonToken, tokens);
-        popExpectedToken(NewLineToken, tokens);
+        popExpectedToken(tk.ColonToken, tokens);
+        popExpectedToken(tk.NewLineToken, tokens);
         const suite = Suite.make(tokens);
         return new IfBranch(cond, suite);
     }
@@ -1065,14 +961,14 @@ class ElifBranch implements IGrammarSymbol {
         };
     }
     toASTNode() {
-        return new ElifBranchNode(
+        return new ast.ElifBranchNode(
             this.condition.toASTNode(), this.suite.toASTNode());
     }
     static make(tokens: ITokenSeq): ElifBranch {
-        popExpectedToken(ElifToken, tokens);
+        popExpectedToken(tk.ElifToken, tokens);
         const cond = Expression.make(tokens);
-        popExpectedToken(ColonToken, tokens);
-        popExpectedToken(NewLineToken, tokens);
+        popExpectedToken(tk.ColonToken, tokens);
+        popExpectedToken(tk.NewLineToken, tokens);
         const suite = Suite.make(tokens);
         return new ElifBranch(cond, suite);
     }
@@ -1083,11 +979,11 @@ class ElseBranch implements IGrammarSymbol {
     readonly suite: Suite;
     constructor(suite: Suite) { this.suite = suite; }
     repr() { return { type: this.type, suite: this.suite.repr() }; }
-    toASTNode() { return new ElseBranchNode(this.suite.toASTNode()); }
+    toASTNode() { return new ast.ElseBranchNode(this.suite.toASTNode()); }
     static make(tokens: ITokenSeq): ElseBranch {
-        popExpectedToken(ElseToken, tokens);
-        popExpectedToken(ColonToken, tokens);
-        popExpectedToken(NewLineToken, tokens);
+        popExpectedToken(tk.ElseToken, tokens);
+        popExpectedToken(tk.ColonToken, tokens);
+        popExpectedToken(tk.NewLineToken, tokens);
         const suite = Suite.make(tokens);
         return new ElseBranch(suite);
     }
@@ -1110,15 +1006,15 @@ class WhileStmt implements IGrammarSymbol {
         };
     }
     toASTNode() {
-        return new WhileNode(
+        return new ast.WhileNode(
             this.condition.toASTNode(),
             this.suite.toASTNode());
     }
     static make(tokens: ITokenSeq): WhileStmt {
-        popExpectedToken(WhileToken, tokens);
+        popExpectedToken(tk.WhileToken, tokens);
         const cond = Expression.make(tokens);
-        popExpectedToken(ColonToken, tokens);
-        popExpectedToken(NewLineToken, tokens);
+        popExpectedToken(tk.ColonToken, tokens);
+        popExpectedToken(tk.NewLineToken, tokens);
         const suite = Suite.make(tokens);
         return new WhileStmt(cond, suite);
     }
@@ -1150,26 +1046,26 @@ class FuncDef implements IGrammarSymbol {
         };
     }
     toASTNode() {
-        let idNodes: IdentifierNode[] = [];
+        let idNodes: ast.IdentifierNode[] = [];
         if (this.params != null) {
             idNodes.push(...this.params.identifiers.map(id => id.toASTNode()));
         }
-        return new FuncDefNode(
+        return new ast.FuncDefNode(
             this.name.toASTNode(),
-            new ParamsNode(idNodes),
+            new ast.ParamsNode(idNodes),
             this.suite.toASTNode());
     }
     static make(tokens: ITokenSeq): FuncDef {
-        popExpectedToken(DefToken, tokens);
+        popExpectedToken(tk.DefToken, tokens);
         const funcName = Identifier.make(tokens);
-        popExpectedToken(LeftParenthesesToken, tokens);
+        popExpectedToken(tk.LeftParenthesesToken, tokens);
         let params = undefined;
-        if (tokens.hasNext() && !(tokens.viewNext() instanceof RightParenthesesToken)) {
+        if (tokens.hasNext() && !(tokens.viewNext() instanceof tk.RightParenthesesToken)) {
             params = IdentifierList.make(tokens);
         }
-        popExpectedToken(RightParenthesesToken, tokens);
-        popExpectedToken(ColonToken, tokens);
-        popExpectedToken(NewLineToken, tokens);
+        popExpectedToken(tk.RightParenthesesToken, tokens);
+        popExpectedToken(tk.ColonToken, tokens);
+        popExpectedToken(tk.NewLineToken, tokens);
         const suite = Suite.make(tokens);
         return new FuncDef(funcName, params, suite);
     }
@@ -1183,31 +1079,31 @@ function makeStatement(tokens: ITokenSeq): Statement {
         throw new PySyntaxError('Expected Statement, but tokens goes to end.');
     }
     const token = tokens.viewNext();
-    if (token instanceof IfToken) {
+    if (token instanceof tk.IfToken) {
         return IfStmt.make(tokens);
-    } else if (token instanceof WhileToken) {
+    } else if (token instanceof tk.WhileToken) {
         return WhileStmt.make(tokens);
-    } else if (token instanceof DefToken) {
+    } else if (token instanceof tk.DefToken) {
         return FuncDef.make(tokens);
-    } else if (token instanceof ReturnToken) {
+    } else if (token instanceof tk.ReturnToken) {
         return ReturnStmt.make(tokens);
-    } else if (token instanceof GlobalToken) {
+    } else if (token instanceof tk.GlobalToken) {
         return GlobalStmt.make(tokens);
-    } else if (token instanceof PassToken) {
+    } else if (token instanceof tk.PassToken) {
         return PassStmt.make(tokens);
-    } else if (token instanceof BreakToken) {
+    } else if (token instanceof tk.BreakToken) {
         return BreakStmt.make(tokens);
-    } else if (token instanceof ContinueToken) {
+    } else if (token instanceof tk.ContinueToken) {
         return ContinueStmt.make(tokens);
     } else {
         const e1 = Expression.make(tokens);
-        if (tokens.hasNext() && tokens.viewNext() instanceof AssignToken) {
-            popExpectedToken(AssignToken, tokens);
+        if (tokens.hasNext() && tokens.viewNext() instanceof tk.AssignToken) {
+            popExpectedToken(tk.AssignToken, tokens);
             const e2 = Expression.make(tokens);
-            popExpectedToken(NewLineToken, tokens);
+            popExpectedToken(tk.NewLineToken, tokens);
             return new AssignStmt(e1, e2);
         } else {
-            popExpectedToken(NewLineToken, tokens);
+            popExpectedToken(tk.NewLineToken, tokens);
             return new ExpressionStmt(e1);
         }
     }
@@ -1221,7 +1117,7 @@ class Program implements IGrammarSymbol {
     readonly statements: Statement[];
     constructor(statements: Statement[]) { this.statements = statements; }
     repr() { return { type: this.type, statements: this.statements.map(x => x.repr()) }; }
-    toASTNode() { return new ProgramNode(this.statements.map(x => x.toASTNode())); }
+    toASTNode() { return new ast.ProgramNode(this.statements.map(x => x.toASTNode())); }
     static make(tokens: ITokenSeq): Program {
         const statements = [];
         while (tokens.hasNext()) {

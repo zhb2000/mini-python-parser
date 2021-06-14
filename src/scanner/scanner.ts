@@ -19,6 +19,7 @@ import {
     makePunctuatorToken,
 } from './token';
 
+/** 词法分析器 */
 class Scanner {
     private readonly dfa = new Automaton();
     private readonly charBuffer: PyChar[] = [];
@@ -27,10 +28,9 @@ class Scanner {
     private readonly tokenFactories =
         new Map<string, (s: string, pos: IPosition) => IToken>();
 
-    constructor() {
-        this.initTokenFactories();
-    }
+    constructor() { this.initTokenFactories(); }
 
+    /** 将源代码转换为 Token 序列 */
     scan(text: string): IToken[] {
         const tokens: IToken[] = [];
         const sourceCode = new SourceCode(text);
@@ -44,8 +44,7 @@ class Scanner {
             } else {
                 if (this.dfa.current().acceptable) {
                     const token = this.retrieveToken();
-                    //忽略尾追的注释
-                    if (!(token instanceof CommentToken)) {
+                    if (!(token instanceof CommentToken)) { //忽略尾追的注释
                         tokens.push(token);
                     }
                 } else {
@@ -92,7 +91,7 @@ class Scanner {
         }
     }
 
-    /** 获取 Token，不修改 buffer 和 DFA */
+    /** 获取 Token，不修改 buffer 和 DFA 状态指针 */
     private getToken(): IToken {
         const factory = this.tokenFactories.get(this.dfa.current().name)
             ?? throwErr(Error, `Node ${this.dfa.current().name} without a token factory`);
@@ -105,7 +104,7 @@ class Scanner {
         return factory(tokenStr, tokenPos);
     }
 
-    /** 获取 Token 并清空 buffer、DFA 回初态 */
+    /** 获取 Token 并清空 buffer，DFA 回初态 */
     private retrieveToken(): IToken {
         const token = this.getToken();
         this.clear();
@@ -137,4 +136,4 @@ class Scanner {
     }
 }
 
-export { IPosition as Position, Scanner };
+export { Scanner };

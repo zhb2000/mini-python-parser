@@ -1,6 +1,6 @@
 import * as strutils from '../utils/strutils';
 import { enumerate, range } from '../utils/pylike';
-import { Position } from './scanner';
+import { IPosition } from './token';
 import { PySyntaxError } from './errors';
 
 /** 换行，相当于其他语言里的分号 */
@@ -9,14 +9,22 @@ class NewLine { toString() { return 'NewLine'; } private _ = undefined; }
 class IndentInc { toString() { return 'IndentInc'; } private _ = undefined; }
 /** 缩进减，相当于其他语言里的左花括号 */
 class IndentDec { toString() { return 'IndentDec'; } private _ = undefined; }
-
+/** 预处理后的字符类型 */
 type PyChar = string | NewLine | IndentInc | IndentDec;
 
+/** 表示一段字符或一个字符 */
 class CharSequence {
+    /** 
+     * 一段字符或一个字符：
+     * 
+     * - `string` 类型表示一段字符
+     * - `NewLine` `IndentInc` `IndentDec` 类型表示一个字符
+     */
     data: string | NewLine | IndentInc | IndentDec;
-    position: Position;
+    /** 字符段或字符的位置 */
+    position: IPosition;
     constructor(data: string | NewLine | IndentInc | IndentDec,
-        position: Position) {
+        position: IPosition) {
         this.data = data;
         this.position = position;
     }
@@ -24,14 +32,20 @@ class CharSequence {
 
 /**
  * 将一行代码分为缩进、代码两部分
+ * 
+ * @param line 一行源代码
+ * @param lineNumber 行号
+ * @returns [缩进段, 代码段]
  */
 function splitLine(line: string, lineNumber: number): [CharSequence[], CharSequence[]] {
     line = line.trimRight();
+    //缩进段，每个 CharSequence 表示一个缩进
     const indents: CharSequence[] = [];
     let spaceCnt = 0;
     let i = 0;
-    //前面的缩进
+    //遍历 line 前面的缩进部分
     while (i < line.length && strutils.isBlank(line[i])) {
+        //将四个空格或一个 Tab 视为一个缩进单位
         if (line[i] === ' ') {
             spaceCnt++;
             if (spaceCnt === 4) {
@@ -53,6 +67,7 @@ function splitLine(line: string, lineNumber: number): [CharSequence[], CharSeque
         i++;
     }
     const codeStr = line.trim();
+    //代码段，第一个 CharSequence 表示代码部分，第二个 CharSequence 表示换行
     const codes: CharSequence[] = [
         {   //实际代码
             data: codeStr,
@@ -123,6 +138,7 @@ function makeCharSequences(text: string): CharSequence[] {
     return sequences;
 }
 
+/** 预处理后的源代码 */
 class SourceCode {
     private sequences: CharSequence[];
 
@@ -130,14 +146,14 @@ class SourceCode {
         this.sequences = makeCharSequences(text);
     }
 
-    *iterCharsWithPos(): Iterable<[Position, PyChar]> {
+    *iterCharsWithPos(): Iterable<[IPosition, PyChar]> {
         for (const seq of this.sequences) {
-            if (strutils.isString(seq.data)) {
+            if (strutils.isString(seq.data)) { // CharSequence 装着一段字符
                 for (const [i, ch] of enumerate(
                     seq.data as string, seq.position.start)) {
                     yield [{ line: seq.position.line, start: i, stop: i + 1 }, ch];
                 }
-            } else {
+            } else { // CharSequence 装着一个字符
                 yield [seq.position, seq.data];
             }
         }

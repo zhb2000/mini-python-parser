@@ -1,5 +1,6 @@
 import { assert, Constructor, throwErr } from "../utils/enhance";
 
+/** 字符或 Token 在源代码中的位置 */
 interface IPosition {
     /** 行号 */
     line: number;
