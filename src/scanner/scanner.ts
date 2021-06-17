@@ -1,6 +1,6 @@
 import { itertools, map, range } from '../utils/pylike';
 import { throwErr } from '../utils/enhance';
-import { PySyntaxError } from './errors';
+import { PySyntaxError } from '../errors';
 import { PyChar, SourceCode } from './preprocessor';
 import { Automaton } from './dfa';
 import {
@@ -52,7 +52,7 @@ class Scanner {
                     const start = this.posBuffer.length > 0 ? this.posBuffer[0].start : 0;
                     throw new PySyntaxError(
                         `Unexpected token ${wrongToken}, ` +
-                        `line ${pos.line}, col ${start} - ${pos.stop}`
+                        `line ${pos.line + 1}, col ${start + 1}`
                     );
                 }
             }

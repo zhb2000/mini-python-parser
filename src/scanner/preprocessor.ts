@@ -1,7 +1,7 @@
 import * as strutils from '../utils/strutils';
 import { enumerate, range } from '../utils/pylike';
 import { IPosition } from './token';
-import { PySyntaxError } from './errors';
+import { PySyntaxError } from '../errors';
 
 /** 换行，相当于其他语言里的分号 */
 class NewLine { toString() { return 'NewLine'; } private _ = undefined; }
@@ -57,7 +57,7 @@ function splitLine(line: string, lineNumber: number): [CharSequence[], CharSeque
             }
         } else if (line[i] === '\t') {
             if (spaceCnt != 0) {
-                throw new PySyntaxError(`Indent error at line ${i}.`);
+                throw new PySyntaxError(`Indent error at line ${i + 1}.`);
             }
             indents.push({
                 data: new IndentInc(),

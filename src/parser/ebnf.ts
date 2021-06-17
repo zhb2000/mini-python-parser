@@ -1,5 +1,5 @@
 import { asNonNull, Constructor, Optional } from '../utils/enhance';
-import { PySyntaxError } from '../scanner/errors';
+import { PySyntaxError } from '../errors';
 import { IToken } from '../scanner/token';
 import { IASTNode } from './ast';
 import * as tk from '../scanner/token';
@@ -43,7 +43,7 @@ function popExpectedToken<Token extends IToken>(
     if (!(token instanceof ExpectedToken)) { // 非所期待 token 类型
         throw new PySyntaxError(
             `Expect ${expectedName}, but get ${token.type} here. ` +
-            `line ${token.position.line} col ${token.position.start}`);
+            `line ${token.position.line + 1} col ${token.position.start + 1}`);
     }
     return token;
 }
@@ -177,7 +177,7 @@ function makeAtom(tokens: ITokenSeq): Atom {
         }
     }
     throw new PySyntaxError(`Expect Atom, but get ${token.type} here. ` +
-        `line ${token.position.line} col ${token.position.start}`);
+        `line ${token.position.line + 1} col ${token.position.start + 1}`);
 }
 //#endregion
 
@@ -412,7 +412,7 @@ class UExprWithOp extends UExpr {
             return new UExprWithOp(op, uExpr);
         } else {
             throw new PySyntaxError(`Unexpected token, get ${op.type} here. ` +
-                `line ${op.position.line} col ${op.position.start}`);
+                `line ${op.position.line + 1} col ${op.position.start + 1}`);
         }
     }
 }
@@ -1124,6 +1124,11 @@ class Program implements IGrammarSymbol {
     repr() { return { type: this.type, statements: this.statements.map(x => x.repr()) }; }
     toASTNode() { return new ast.ProgramNode(this.statements.map(x => x.toASTNode())); }
     static make(tokens: ITokenSeq): Program {
+        if (!tokens.hasNext()
+            || (tokens.hasNext()
+                && tokens.viewNext() instanceof tk.NewLineToken)) {
+            return new Program([]);
+        }
         const statements = [];
         while (tokens.hasNext()) {
             statements.push(makeStatement(tokens));

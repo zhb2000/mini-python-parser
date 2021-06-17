@@ -1,6 +1,6 @@
 import { cases } from './parserTreeCases';
 import { Parser } from '../../src/parser/parser';
-import { PySyntaxError } from '../../src/scanner/errors';
+import { PySyntaxError } from '../../src/errors';
 
 test('Parser.toParseTree test 0', () => {
     const ci = 0;
