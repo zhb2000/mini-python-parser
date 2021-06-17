@@ -4,12 +4,10 @@ interface IASTNode {
     type: string;
     display: string;
     children: IASTNode[];
-    repr(): INodeRepr;
+    repr(): IRepr;
 }
 
-interface INodeRepr {
-    type: string;
-}
+interface IRepr { type: string; }
 
 abstract class BinaryNode implements IASTNode {
     get type() { return this.constructor.name; }

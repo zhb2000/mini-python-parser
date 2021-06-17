@@ -8,9 +8,11 @@ import * as ast from './ast';
 /** 文法符号 */
 interface IGrammarSymbol {
     readonly type: string;
-    repr(): { type: string; };
+    repr(): IRepr;
     toASTNode(): IASTNode;
 }
+
+interface IRepr { type: string; }
 
 /** 定义了三种操作的 token 序列 */
 interface ITokenSeq {
@@ -117,7 +119,7 @@ class IntLiteral implements IGrammarSymbol {
     readonly type = 'IntLiteral';
     readonly value: bigint;
     constructor(value: bigint) { this.value = value; }
-    repr() { return { type: this.type, value: this.value }; }
+    repr() { return { type: this.type, value: Number.parseInt(this.value.toString()) }; }
     toASTNode() { return new ast.IntNode(this.value); }
     static make(tokens: ITokenSeq): IntLiteral {
         const integer = popExpectedToken(tk.IntToken, tokens);
@@ -141,7 +143,7 @@ class ParenthesesExpr implements IGrammarSymbol {
     readonly type = 'ParenthesesExpr';
     readonly expression: Expression;
     constructor(expression: Expression) { this.expression = expression; }
-    repr(): any { return { type: this.type, expression: this.expression.repr() }; }
+    repr() { return { type: this.type, expression: this.expression.repr() }; }
     toASTNode(): IASTNode { return this.expression.toASTNode(); }
     static make(tokens: ITokenSeq): ParenthesesExpr {
         popExpectedToken(tk.LeftParenthesesToken, tokens);
@@ -189,7 +191,7 @@ class Primary implements IGrammarSymbol {
         this.atom = atom;
         this.appends = appends;
     }
-    repr(): any {
+    repr() {
         return {
             type: this.type,
             atom: this.atom.repr(),
@@ -287,7 +289,7 @@ class ExprList implements IGrammarSymbol {
     readonly type = 'ExprList';
     readonly expressions: Expression[];
     constructor(expressions: Expression[]) { this.expressions = expressions; }
-    repr(): any {
+    repr() {
         return {
             type: this.type,
             expressions: this.expressions.map(x => x.repr())
@@ -318,7 +320,7 @@ class Power implements IGrammarSymbol {
         this.primary = primary;
         this.uExprs = uExprs;
     }
-    repr(): any {
+    repr() {
         return {
             type: this.type,
             primary: this.primary.repr(),
@@ -354,7 +356,7 @@ class Power implements IGrammarSymbol {
 /** u_expr ::= "-" u_expr | "+" u_expr | "~" u_expr | power */
 abstract class UExpr implements IGrammarSymbol {
     get type() { return this.constructor.name; }
-    abstract repr(): IASTNode;
+    abstract repr(): IRepr;
     abstract toASTNode(): IASTNode;
     static make(tokens: ITokenSeq): UExpr {
         if (!tokens.hasNext()) {
@@ -379,7 +381,7 @@ class UExprWithOp extends UExpr {
         this.operator = operator;
         this.uExpr = uExpr;
     }
-    repr(): any {
+    repr() {
         return {
             type: this.type,
             operator: this.operator.repr(),
@@ -415,7 +417,7 @@ class UExprWithOp extends UExpr {
 class UExprPower extends UExpr {
     readonly power: Power;
     constructor(power: Power) { super(); this.power = power; };
-    repr(): any { return { type: this.type, power: this.power.repr() }; }
+    repr() { return { type: this.type, power: this.power.repr() }; }
     toASTNode(): IASTNode { return this.power.toASTNode(); }
     static make(tokens: ITokenSeq): UExprPower {
         return new UExprPower(Power.make(tokens));
@@ -488,7 +490,7 @@ class InfixExpr<Op extends IToken, T extends IGrammarSymbol>
         this.expression = expression;
         this.appends = appends;
     }
-    repr(): any {
+    repr() {
         return {
             type: this.type,
             expression: this.expression.repr(),
@@ -565,7 +567,7 @@ class InfixExprAppend<Op extends IToken, T extends IGrammarSymbol>
         this.operator = operator;
         this.expression = expression;
     }
-    repr(): any {
+    repr() {
         return {
             type: this.type,
             operator: this.operator.repr(),
@@ -629,7 +631,7 @@ const comparisonFac = new InfixExprFactory<Comparison, CompOperator, OrExpr>(
 /** not_test ::= "not" not_test | comparison */
 abstract class NotTest implements IGrammarSymbol {
     get type() { return this.constructor.name; }
-    abstract repr(): any;
+    abstract repr(): IRepr;
     abstract toASTNode(): IASTNode;
     static make(tokens: ITokenSeq): NotTest {
         if (!tokens.hasNext()) {
@@ -652,7 +654,7 @@ class NotTestWithOp extends NotTest {
         this.operator = operator;
         this.notTest = notTest;
     }
-    repr(): any {
+    repr() {
         return {
             type: this.type,
             operator: this.operator.repr(),
@@ -670,7 +672,7 @@ class NotTestWithOp extends NotTest {
 class NotTestComparison extends NotTest {
     readonly comparison: Comparison;
     constructor(comparison: Comparison) { super(); this.comparison = comparison; };
-    repr(): any { return { type: this.type, comparison: this.comparison.repr() }; }
+    repr() { return { type: this.type, comparison: this.comparison.repr() }; }
     toASTNode(): IASTNode { return this.comparison.toASTNode(); }
     static make(tokens: ITokenSeq): NotTestComparison {
         return new NotTestComparison(comparisonFac.make(tokens));
@@ -692,7 +694,7 @@ class Expression implements IGrammarSymbol {
     readonly type = 'Expression';
     readonly orTest: OrTest;
     constructor(orTest: OrTest) { this.orTest = orTest; }
-    repr(): any { return { type: this.type, orTest: this.orTest.repr() }; }
+    repr() { return { type: this.type, orTest: this.orTest.repr() }; }
     toASTNode(): IASTNode { return this.orTest.toASTNode(); }
     static make(tokens: ITokenSeq): Expression {
         const orTest = orTestFac.make(tokens);
@@ -712,7 +714,7 @@ class ExpressionStmt implements IGrammarSymbol {
     readonly type = 'ExpressionStmt';
     readonly expression: Expression;
     constructor(expression: Expression) { this.expression = expression; }
-    repr(): any { return { type: this.type, expression: this.expression.repr() }; }
+    repr() { return { type: this.type, expression: this.expression.repr() }; }
     toASTNode(): IASTNode { return this.expression.toASTNode(); }
     static make(tokens: ITokenSeq): ExpressionStmt {
         const expression = Expression.make(tokens);
@@ -730,7 +732,7 @@ class AssignStmt implements IGrammarSymbol {
         this.left = left;
         this.right = right;
     }
-    repr(): any {
+    repr() {
         return {
             type: this.type,
             left: this.left.repr(),
@@ -789,7 +791,7 @@ class ReturnStmt implements IGrammarSymbol {
     readonly type = 'ReturnStmt';
     readonly expression?: Expression;
     constructor(expression?: Expression) { this.expression = expression; }
-    repr(): any { return { type: this.type, expression: this.expression?.repr() }; }
+    repr() { return { type: this.type, expression: this.expression?.repr() }; }
     toASTNode() { return new ast.ReturnNode(this.expression?.toASTNode()); }
     static make(tokens: ITokenSeq): ReturnStmt {
         popExpectedToken(tk.ReturnToken, tokens);
@@ -852,11 +854,11 @@ class Suite implements IGrammarSymbol {
     readonly type = 'Suite';
     readonly statements: Statement[];
     constructor(statements: Statement[]) { this.statements = statements; }
-    repr(): any {
+    repr(): IRepr {
         return {
             type: this.type,
             statements: this.statements.map(x => x.repr())
-        };
+        } as IRepr;
     }
     toASTNode(): ast.SuiteNode { return new ast.SuiteNode(this.statements.map(x => x.toASTNode())); }
     static make(tokens: ITokenSeq): Suite {
