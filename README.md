@@ -1,5 +1,5 @@
 # Mini-Python Parser
-编译原理大作业，一个“Mini-Python”语言的 Parser，可以在浏览器里运行并查看结果。
+编译原理大作业，一个“Mini-Python”语言的 Parser，可以在浏览器里运行并查看结果：[Mini-Python Parser](https://zhb2000.github.io/mini-python-parser)。
 
 Mini-Python 的语法基于 Python 3.6 简化而来，文法定义详见[语法分析.md](./doc/parser/语法分析.md)。
 
