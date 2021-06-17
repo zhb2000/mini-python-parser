@@ -1,4 +1,5 @@
-# ui
+# UI
+构建 UI 之前，请先编译外层目录中的 TypeScript 代码，生成 dist 文件夹。
 
 ## Project setup
 ```

@@ -42,7 +42,8 @@ function popExpectedToken<Token extends IToken>(
     const token = tokens.goNext();
     if (!(token instanceof ExpectedToken)) { // 非所期待 token 类型
         throw new PySyntaxError(
-            `Expect ${expectedName}, but get ${token.type} here.`);
+            `Expect ${expectedName}, but get ${token.type} here. ` +
+            `line ${token.position.line} col ${token.position.start}`);
     }
     return token;
 }
@@ -175,7 +176,8 @@ function makeAtom(tokens: ITokenSeq): Atom {
             return make(tokens);
         }
     }
-    throw new PySyntaxError(`Expect Atom, but get ${token.type} here.`);
+    throw new PySyntaxError(`Expect Atom, but get ${token.type} here. ` +
+        `line ${token.position.line} col ${token.position.start}`);
 }
 //#endregion
 
@@ -409,7 +411,8 @@ class UExprWithOp extends UExpr {
             const uExpr = UExpr.make(tokens);
             return new UExprWithOp(op, uExpr);
         } else {
-            throw new PySyntaxError(`Unexpected token, get ${op.type} here.`);
+            throw new PySyntaxError(`Unexpected token, get ${op.type} here. ` +
+                `line ${op.position.line} col ${op.position.start}`);
         }
     }
 }
