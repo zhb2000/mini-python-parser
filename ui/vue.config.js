@@ -6,5 +6,6 @@ module.exports = {
                 args[0].title = 'Mini-Python Parser';
                 return args;
             });
-    }
-}
+    },
+    publicPath: './'
+};
