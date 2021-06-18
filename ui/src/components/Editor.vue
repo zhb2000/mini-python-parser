@@ -9,6 +9,7 @@
       class="editor-textarea"
       wrap="off"
       placeholder="input Python code here..."
+      @keydown.tab.prevent="tabDown($event)"
     />
   </div>
 </template>
@@ -31,6 +32,16 @@ export default {
   methods: {
     parseClick() {
       this.$emit("parseClick", this.code);
+    },
+    tabDown(event) {
+      const text = this.code;
+      const originalSelectionStart = event.target.selectionStart;
+      const textStart = text.slice(0, originalSelectionStart);
+      const textEnd = text.slice(originalSelectionStart);
+      this.code = textStart + "    " + textEnd;
+      event.target.value = this.code; // required to make the cursor stay in place.
+      event.target.selectionEnd = event.target.selectionStart =
+        originalSelectionStart + 4;
     },
   },
 };
