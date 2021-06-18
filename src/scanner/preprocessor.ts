@@ -1,7 +1,7 @@
-import * as strutils from '../utils/strutils';
-import { enumerate, range } from '../utils/pylike';
-import { IPosition } from './token';
-import { PySyntaxError } from '../errors';
+import * as strutils from '../utils/strutils.js';
+import { enumerate, range } from '../utils/pylike.js';
+import { IPosition } from './token.js';
+import { PySyntaxError } from '../errors.js';
 
 /** 换行，相当于其他语言里的分号 */
 class NewLine { toString() { return 'NewLine'; } private _ = undefined; }

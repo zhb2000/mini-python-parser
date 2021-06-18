@@ -1,4 +1,4 @@
-import { assert } from "../utils/enhance";
+import { assert } from '../utils/enhance.js';
 
 interface IASTNode {
     type: string;

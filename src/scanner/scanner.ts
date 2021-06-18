@@ -1,8 +1,8 @@
-import { itertools, map, range } from '../utils/pylike';
-import { throwErr } from '../utils/enhance';
-import { PySyntaxError } from '../errors';
-import { PyChar, SourceCode } from './preprocessor';
-import { Automaton } from './dfa';
+import { itertools, map, range } from '../utils/pylike.js';
+import { throwErr } from '../utils/enhance.js';
+import { PySyntaxError } from '../errors.js';
+import { PyChar, SourceCode } from './preprocessor.js';
+import { Automaton } from './dfa.js';
 import {
     IPosition,
     IToken,
@@ -17,7 +17,7 @@ import {
     isPyKeyword,
     makeKeywordToken,
     makePunctuatorToken,
-} from './token';
+} from './token.js';
 
 /** 词法分析器 */
 class Scanner {

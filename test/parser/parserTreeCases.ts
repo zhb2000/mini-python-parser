@@ -15,16 +15,13 @@ const cases = [
             '            # comment\n' +
             '        b = b << a\n' +
             '    a = a | b\n' +
-            'b.func(a + b // c)\n',
-        expected: []
+            'b.func(a + b // c)\n'
     },
     { // 1
-        input: 'a = a**6',
-        expected: []
+        input: 'a = a**6'
     },
     { // 2
-        input: 'a = a//6',
-        expected: []
+        input: 'a = a//6'
     }
 ];
 

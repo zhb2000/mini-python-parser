@@ -1,8 +1,8 @@
-import { Scanner } from '../scanner/scanner';
-import { IToken } from '../scanner/token';
-import { ITokenSeq } from './ebnf';
-import * as ebnf from './ebnf';
-import * as ast from './ast';
+import { Scanner } from '../scanner/scanner.js';
+import { IToken } from '../scanner/token.js';
+import { ITokenSeq } from './ebnf.js';
+import * as ebnf from './ebnf.js';
+import * as ast from './ast.js';
 
 class TokenSeq implements ITokenSeq {
     tokens: IToken[];

@@ -1,9 +1,9 @@
-import { asNonNull, Constructor, Optional } from '../utils/enhance';
-import { PySyntaxError } from '../errors';
-import { IToken } from '../scanner/token';
-import { IASTNode } from './ast';
-import * as tk from '../scanner/token';
-import * as ast from './ast';
+import { asNonNull, Constructor, Optional } from '../utils/enhance.js';
+import { PySyntaxError } from '../errors.js';
+import { IToken } from '../scanner/token.js';
+import { IASTNode } from './ast.js';
+import * as tk from '../scanner/token.js';
+import * as ast from './ast.js';
 
 /** 文法符号 */
 interface IGrammarSymbol {
