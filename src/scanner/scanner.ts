@@ -32,6 +32,7 @@ class Scanner {
 
     /** 将源代码转换为 Token 序列 */
     scan(text: string): IToken[] {
+        this.clear();
         const tokens: IToken[] = [];
         const sourceCode = new SourceCode(text);
         const posAndChar = [...sourceCode.iterCharsWithPos()];

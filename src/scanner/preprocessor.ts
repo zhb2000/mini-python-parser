@@ -57,7 +57,7 @@ function splitLine(line: string, lineNumber: number): [CharSequence[], CharSeque
             }
         } else if (line[i] === '\t') {
             if (spaceCnt != 0) {
-                throw new PySyntaxError(`Indent error at line ${i + 1}.`);
+                throw new PySyntaxError(`Indent error at line ${lineNumber + 1}.`);
             }
             indents.push({
                 data: new IndentInc(),
@@ -65,6 +65,9 @@ function splitLine(line: string, lineNumber: number): [CharSequence[], CharSeque
             });
         }
         i++;
+    }
+    if (spaceCnt != 0) {
+        throw new PySyntaxError(`Indent error at line ${lineNumber + 1}.`);
     }
     const codeStr = line.trim();
     //代码段，第一个 CharSequence 表示代码部分，第二个 CharSequence 表示换行

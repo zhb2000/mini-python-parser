@@ -19,11 +19,14 @@ class TokenSeq implements ITokenSeq {
 
 class Parser {
     private readonly scanner = new Scanner();
+    tokensToParseTree(tokens: IToken[]): ebnf.Program {
+        const seq = new TokenSeq(tokens);
+        return ebnf.Program.make(seq);
+    }
     toParseTree(text: string): ebnf.Program {
         this.scanner.clear();
         const tokens = this.scanner.scan(text);
-        const seq = new TokenSeq(tokens);
-        return ebnf.Program.make(seq);
+        return this.tokensToParseTree(tokens);
     }
     toAST(text: string): ast.ProgramNode {
         return this.toParseTree(text).toASTNode();
