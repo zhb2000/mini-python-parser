@@ -1,6 +1,6 @@
 /** 仿 Python 的各种实用函数 */
-import { throwErr } from './enhance.js';
-import * as itertools from './pylike-itertools.js';
+import { throwErr } from './enhance';
+import * as itertools from './pylike-itertools';
 
 function list(): [];
 function list<T>(iterable: Iterable<T>): T[];

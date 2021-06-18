@@ -1,4 +1,4 @@
-import { assert } from './enhance.js';
+import { assert } from './enhance';
 
 /** 是否为空串或 `null` 或 `undefined` */
 function isEmpty(s: string | undefined | null): boolean {

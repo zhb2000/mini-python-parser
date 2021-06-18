@@ -1,9 +1,9 @@
-import { asNonNull, Constructor, Optional } from '../utils/enhance.js';
-import { PySyntaxError } from '../errors.js';
-import { IToken } from '../scanner/token.js';
-import { IASTNode } from './ast.js';
-import * as tk from '../scanner/token.js';
-import * as ast from './ast.js';
+import { asNonNull, Constructor, Optional } from '../utils/enhance';
+import { PySyntaxError } from '../errors';
+import { IToken } from '../scanner/token';
+import { IASTNode } from './ast';
+import * as tk from '../scanner/token';
+import * as ast from './ast';
 
 /** 文法符号 */
 interface IGrammarSymbol {
@@ -719,11 +719,6 @@ class ExpressionStmt implements IGrammarSymbol {
     constructor(expression: Expression) { this.expression = expression; }
     repr() { return { type: this.type, expression: this.expression.repr() }; }
     toASTNode(): IASTNode { return this.expression.toASTNode(); }
-    static make(tokens: ITokenSeq): ExpressionStmt {
-        const expression = Expression.make(tokens);
-        popExpectedToken(tk.NewLineToken, tokens);
-        return new ExpressionStmt(expression);
-    }
 }
 
 /** assign_stmt ::= expression "=" expression newline */
@@ -742,13 +737,18 @@ class AssignStmt implements IGrammarSymbol {
             right: this.right.repr()
         };
     }
-    toASTNode() { return new ast.AssignNode(this.left.toASTNode(), this.right.toASTNode()); }
-    static make(tokens: ITokenSeq): AssignStmt {
-        const left = Expression.make(tokens);
-        popExpectedToken(tk.AssignToken, tokens);
-        const right = Expression.make(tokens);
-        popExpectedToken(tk.NewLineToken, tokens);
-        return new AssignStmt(left, right);
+    toASTNode() {
+        const lch = this.left.toASTNode();
+        const rch = this.right.toASTNode();
+        if (lch instanceof ast.IdentifierNode ||
+            lch instanceof ast.AttrRefNode ||
+            lch instanceof ast.SubscriptionNode) {
+            return new ast.AssignNode(lch, rch);
+        } else {
+            throw new PySyntaxError(
+                'LHS of assign statement must be one of these: ' +
+                'identifier, attributeref, subscription.');
+        }
     }
 }
 
@@ -1124,11 +1124,6 @@ class Program implements IGrammarSymbol {
     repr() { return { type: this.type, statements: this.statements.map(x => x.repr()) }; }
     toASTNode() { return new ast.ProgramNode(this.statements.map(x => x.toASTNode())); }
     static make(tokens: ITokenSeq): Program {
-        if (!tokens.hasNext()
-            || (tokens.hasNext()
-                && tokens.viewNext() instanceof tk.NewLineToken)) {
-            return new Program([]);
-        }
         const statements = [];
         while (tokens.hasNext()) {
             statements.push(makeStatement(tokens));

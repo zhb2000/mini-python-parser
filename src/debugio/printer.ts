@@ -1,4 +1,4 @@
-import { CharSequence } from '../scanner/preprocessor.js';
+import { CharSequence } from '../scanner/preprocessor';
 function printCharSequences(sequences: CharSequence[]) {
     const sj = sequences.map(s => s.data.toString());
     return sj.join(' ');

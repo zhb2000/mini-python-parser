@@ -1,7 +1,7 @@
-import * as strutils from '../utils/strutils.js';
-import { enumerate, range } from '../utils/pylike.js';
-import { IPosition } from './token.js';
-import { PySyntaxError } from '../errors.js';
+import * as strutils from '../utils/strutils';
+import { all, enumerate, map, range } from '../utils/pylike';
+import { IPosition } from './token';
+import { PySyntaxError } from '../errors';
 
 /** 换行，相当于其他语言里的分号 */
 class NewLine { toString() { return 'NewLine'; } private _ = undefined; }
@@ -149,6 +149,14 @@ class SourceCode {
         this.sequences = makeCharSequences(text);
     }
 
+    /** 所有字符都是空白符，则为空白源代码 */
+    isBlank(): boolean {
+        return all(map(
+            (ch) => ch instanceof NewLine,
+            this.iterChars()
+        ));
+    }
+
     *iterCharsWithPos(): Iterable<[IPosition, PyChar]> {
         for (const seq of this.sequences) {
             if (strutils.isString(seq.data)) { // CharSequence 装着一段字符
@@ -159,6 +167,12 @@ class SourceCode {
             } else { // CharSequence 装着一个字符
                 yield [seq.position, seq.data];
             }
+        }
+    }
+
+    *iterChars(): Iterable<PyChar> {
+        for (const [_, ch] of this.iterCharsWithPos()) {
+            yield ch;
         }
     }
 }

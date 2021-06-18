@@ -1,7 +1,7 @@
-import { isdigit, isalpha } from '../utils/strutils.js';
-import { asNonNull, Optional } from '../utils/enhance.js';
-import { itertools, map, range } from '../utils/pylike.js';
-import { IndentInc, IndentDec, NewLine, PyChar } from './preprocessor.js';
+import { isdigit, isalpha } from '../utils/strutils';
+import { asNonNull, Optional } from '../utils/enhance';
+import { itertools, map, range } from '../utils/pylike';
+import { IndentInc, IndentDec, NewLine, PyChar } from './preprocessor';
 
 /** 键为 PyChar 的 Map */
 class PyCharMap<V> {

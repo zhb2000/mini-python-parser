@@ -121,6 +121,10 @@ const cases = [
             { type: 'StringToken', value: String.raw`"a\n'b\"c\'d"` },
             { type: 'NewLineToken', value: '' }
         ]
+    },
+    { // 4
+        input: '    \n\t   \n \n',
+        expected: []
     }
 ];
 

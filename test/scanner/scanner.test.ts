@@ -28,6 +28,12 @@ test('Scanner.scan test 3', () => {
     expect(tokens.map(token => token.repr())).toEqual(cases[ci].expected);
 });
 
+test('Scanner.scan test 4', () => {
+    const ci = 4;
+    const tokens = scanner.scan(cases[ci].input);
+    expect(tokens.map(token => token.repr())).toEqual(cases[ci].expected);
+});
+
 test('Scanner.scan Error test 0', () => {
     const text = 'a = 123$'; // 非法符号
     expect(() => scanner.scan(text)).toThrow(PySyntaxError);
